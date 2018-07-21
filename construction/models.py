@@ -1,12 +1,11 @@
 from django.db import models
 from bases.models import *
 
-
 # 进度表
 class Schedule(models.Model):
     code = models.CharField('项目编号', max_length=64)
     name = models.CharField('项目名称', max_length=64)
-    unit = models.ForeignKey('Unit', on_delete=models.PROTECT, verbose_name='单位')
+    unit = models.ForeignKey('bases.Unit', on_delete=models.PROTECT, verbose_name='单位')
     invnum = models.DecimalField('清单数量', max_digits=13, decimal_places=3)
     invprice = models.DecimalField('清单单价', max_digits=13, decimal_places=2)
     changenum = models.DecimalField('工程变更增减数量', max_digits=13, decimal_places=3)
@@ -55,7 +54,7 @@ class ContractPay(models.Model):
 
 # 材料图算量
 class Budget(models.Model):
-    material = models.ForeignKey('Material', on_delete=models.PROTECT, verbose_name='材料')
+    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
     num = models.DecimalField('图算量', max_digits=13, decimal_places=3)
     money = models.DecimalField('图算金额', max_digits=13, decimal_places=2)
@@ -69,7 +68,7 @@ class Budget(models.Model):
 
 # 材料入库
 class MaterialInRecord(models.Model):
-    material = models.ForeignKey('Material', on_delete=models.PROTECT, verbose_name='材料')
+    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
     money = models.DecimalField('金额', max_digits=13, decimal_places=2)
@@ -84,7 +83,7 @@ class MaterialInRecord(models.Model):
 
 # 材料出库
 class MaterialOutRecord(models.Model):
-    material = models.ForeignKey('Material', on_delete=models.PROTECT, verbose_name='材料')
+    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
     money = models.DecimalField('金额', max_digits=13, decimal_places=2)
