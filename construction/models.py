@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import User
 import datetime
 from bases.models import *
@@ -25,7 +26,7 @@ class JobSchedule(models.Model):
         return format(self.invnum + self.changenum, '0.3f')
 
     def nowmoney(self):
-        return format(self.invmoney + self.changemoney, '0,.2f')
+        return format(self.invmoney() + self.changemoney(), '0,.2f')
 
     invmoney.short_description = '清单金额'  # admin中要设置为只读
     changemoney.short_description = '工程变更增减金额'
@@ -73,7 +74,7 @@ class MeasuringSchedule(models.Model):
         return format(self.invnum + self.changenum, '0.3f')
 
     def nowmoney(self):
-        return format(self.invmoney + self.changemoney, '0,.2f')
+        return format(self.invmoney() + self.changemoney(), '0,.2f')
 
     invmoney.short_description = '清单金额'  # admin中要设置为只读
     changemoney.short_description = '工程变更增减金额'
@@ -253,12 +254,15 @@ class LeaseOutRecord(models.Model):
     docid = models.ForeignKey('LeaseInRecord', on_delete=models.CASCADE, verbose_name='租入单号')
     returndate = models.DateField('归还时间')
     num = models.DecimalField('归还数量', max_digits=13, decimal_places=3)
+    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+    makedate = models.DateField('日期', auto_now=True)
 
     class Meta:
         verbose_name_plural = verbose_name = '归还'
 
     def __str__(self):
-        return self.docid__material
+        p = self.docid
+        return p.material
 
 
 # 租赁管理-租入
@@ -267,6 +271,8 @@ class LeaseInRecord(models.Model):
     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
     leasedate = models.DateField('租赁时间')
     num = models.DecimalField('租赁数量', max_digits=13, decimal_places=3)
+    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+    makedate = models.DateField('日期', auto_now=True)
 
     def returnnum(self):
         sumreturn = LeaseOutRecord.objects.filter(docid=self.id).annotate(sumreturn=models.Sum('num')).only('sumreturn')
@@ -303,3 +309,41 @@ class LeaseStock(models.Model):
         return self.leaseday() * self.price
 
     leasemoney.short_description = '租赁金额'
+
+    class Meta:
+        verbose_name_plural = verbose_name = '租赁库存'
+
+    def __str__(self):
+        return self.material
+
+
+# 人工费用
+class LaborCost(models.Model):
+    code = models.CharField('结算单号', max_length=64)
+    name = models.CharField('项目', max_length=64)
+    settlementdate = models.DateField('结算时间', default=datetime.date.today())
+    settlementmoney = models.DecimalField('结算金额', max_digits=13, decimal_places=2)
+    memo = models.CharField('备注', max_length=128, blank=True, null=True)
+    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+    makedate = models.DateField('日期', auto_now=True)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '人工费用'
+
+    def __str__(self):
+        return self.code + ' ' + self.name
+
+
+# 人工费用支付
+class LaborPay(models.Model):
+    laborcost = models.ForeignKey('LaborCost', on_delete=models.CASCADE, verbose_name='人工费用')
+    paydate = models.DateField('日期', default=datetime.date.today())
+    paymoney = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
+    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+    makedate = models.DateField('日期', auto_now=True)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '人工费用支付'
+
+    def __str__(self):
+        return self.laborcost
