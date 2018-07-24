@@ -10,20 +10,26 @@ from django.db import models
 
 
 # 单位档案
-# class Unit(models.Model):
-class 单位(models.Model):
-    单位 = models.CharField(max_length=32, primary_key=True)
+class Unit(models.Model):
+    # class 单位(models.Model):
+    单位 = models.CharField(max_length=32, unique=True)
 
     def __str__(self):
         return self.单位
 
+    class Meta:
+        verbose_name_plural = verbose_name = '单位'
+
 
 # 材料档案
-# class Material(models.Model):
-class 材料(models.Model):
+class Material(models.Model):
+    # class 材料(models.Model):
     名称 = models.CharField(max_length=64)
     规格 = models.CharField(max_length=64)
-    单位 = models.ForeignKey('单位', on_delete=models.PROTECT)
+    单位 = models.ForeignKey(Unit, on_delete=models.PROTECT)
 
     def __str__(self):
-        return self.单位 + ' ' + self.规格
+        return self.名称 + ' ' + self.规格
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料'
