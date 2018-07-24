@@ -1,5 +1,3 @@
-from django.db import models
-from django.db.models import Q
 from django.contrib.auth.models import User
 import datetime
 from bases.models import *
@@ -347,3 +345,7 @@ class LaborPay(models.Model):
 
     def __str__(self):
         return self.laborcost
+
+
+# 租赁费用
+class LeaseCost(models.Model):
