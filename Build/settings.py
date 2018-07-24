@@ -42,8 +42,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'reversion',
     'bases.apps.BasesConfig',
-    'construction.apps.ConstructionConfig',
-    'develop.apps.DevelopConfig',
+    # 'construction.apps.ConstructionConfig',
+    # 'develop.apps.DevelopConfig',
 ]
 
 MIDDLEWARE = [

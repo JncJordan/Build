@@ -346,6 +346,5 @@ class LaborPay(models.Model):
     def __str__(self):
         return self.laborcost
 
-
 # 租赁费用
-class LeaseCost(models.Model):
+# class LeaseCost(models.Model):
