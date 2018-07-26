@@ -46,10 +46,11 @@ class ForeignKeySearchWidget(forms.Widget):
     def label_for_value(self, value):
         key = self.rel.get_related_field().name
         try:
-            obj = self.rel.to._default_manager.using(
+            # obj = self.rel.to._default_manager.using(
+            obj = self.rel.model._default_manager.using(
                 self.db).get(**{key: value})
             return '%s' % escape(Truncator(obj).words(14, truncate='...'))
-        except (ValueError, self.rel.to.DoesNotExist):
+        except (ValueError, self.rel.model.DoesNotExist):
             return ""
 
     @property
@@ -78,7 +79,9 @@ class RelateFieldPlugin(BaseAdminPlugin):
                     self.has_model_perm(db_field.remote_field.model, 'view'):
                 db = kwargs.get('using')
                 return dict(attrs or {},
-                            widget=(style == 'fk-ajax' and ForeignKeySearchWidget or ForeignKeySelectWidget)(db_field.remote_field, self.admin_view, using=db))
+                            widget=(style == 'fk-ajax' and ForeignKeySearchWidget or ForeignKeySelectWidget)(db_field.remote_field, self.admin_view,
+                                                                                                             using=db))
         return attrs
+
 
 site.register_plugin(RelateFieldPlugin, ModelFormAdminView)
