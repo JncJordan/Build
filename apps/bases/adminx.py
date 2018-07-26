@@ -18,6 +18,7 @@ class UnitAdmin(object):
     search_fields = ('单位',)  # 要查询的列
     list_filter = ('单位',)  # 要筛选的列
     model_icon = 'fa fa-cube'  # 模块的图标
+    relfield_style = 'fk-select'
 
 
 # 材料
@@ -25,8 +26,7 @@ class MaterialAdmin(object):
     list_display = ('名称', '规格', '单位')  # 添加要显示的列
     search_fields = ('名称', '规格')  # 要查询的列
     list_filter = ('名称', '规格')  # 要筛选的列
-    # raw_id_fields = ('单位',) # 原 admin 才有此效果
-    # style_fields = {'单位': "fk-ajax"}
+    raw_id_fields = ('单位',)  # 原 admin 才有此效果
     relfield_style = 'fk-ajax'
 
 

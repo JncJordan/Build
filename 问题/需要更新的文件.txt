@@ -1,0 +1,6 @@
+字体图标
+font-awesome -> venv/lib/python3.x/site-packages/xadmin/static/xadmin/vendor/font-awesome
+
+xadmin搜索bug
+relfield.py -> venv/lib/python3.x/site-packages/xadmin/plugins/relfield.py
+edit.py -> venv/lib/python3.x/site-packages/xadmin/views/edit.py

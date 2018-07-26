@@ -33,3 +33,29 @@ class Material(models.Model):
 
     class Meta:
         verbose_name_plural = verbose_name = '材料'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
