@@ -4,3 +4,6 @@ font-awesome -> venv/lib/python3.x/site-packages/xadmin/static/xadmin/vendor/fon
 xadmin搜索bug
 relfield.py -> venv/lib/python3.x/site-packages/xadmin/plugins/relfield.py
 edit.py -> venv/lib/python3.x/site-packages/xadmin/views/edit.py
+
+自定义model图标
+sitemenu_accordion.html -> venv/lib/python3.x/site-packages/xadmin/templates/xadmin/includes/sitemenu_accordion.html
