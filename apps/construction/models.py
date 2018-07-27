@@ -3,137 +3,137 @@ import datetime
 from bases.models import *
 
 
-# 工程进度表
-class JobSchedule(models.Model):
-    location = models.CharField('单项工程位置', max_length=64)
-    code = models.CharField('项目编号', max_length=64)
-    name = models.CharField('项目名称', max_length=64)
-    unit = models.ForeignKey('bases.Unit', on_delete=models.PROTECT, verbose_name='单位')
-    invnum = models.DecimalField('清单数量', max_digits=13, decimal_places=3, default=0)
-    invprice = models.DecimalField('清单单价', max_digits=13, decimal_places=2, default=0)
-    changenum = models.DecimalField('工程变更增减数量', max_digits=13, decimal_places=3, default=0)
-    changeprice = models.DecimalField('工程变更增减单价', max_digits=13, decimal_places=2, default=0)
-
-    def invmoney(self):
-        return format(self.invnum * self.invprice, '0,.2f')
-
-    def changemoney(self):
-        return format(self.changenum * self.changeprice, '0,.2f')
-
-    def nownum(self):
-        return format(self.invnum + self.changenum, '0.3f')
-
-    def nowmoney(self):
-        return format(self.invmoney() + self.changemoney(), '0,.2f')
-
-    invmoney.short_description = '清单金额'  # admin中要设置为只读
-    changemoney.short_description = '工程变更增减金额'
-    nownum.short_description = '变更后数量'
-    nowmoney.short_description = '变更后金额'
-    thisweekcomplatenum = models.DecimalField('到本期末累计完成数量', max_digits=13, decimal_places=3, default=0)
-    thisweekcomplatemoney = models.DecimalField('到本期末累计完成金额', max_digits=13, decimal_places=2, default=0)
-    lastweekcomplatenum = models.DecimalField('到上期末累计完成数量', max_digits=13, decimal_places=3, default=0)
-    lastweekcomplatemoney = models.DecimalField('到上期末累计完成金额', max_digits=13, decimal_places=2, default=0)
-    thiscomplatenum = models.DecimalField('本期完成数量', max_digits=13, decimal_places=3, default=0)
-    thiscomplatemoney = models.DecimalField('本期完成金额', max_digits=13, decimal_places=2, default=0)
-
-    def complatedratio(self):
-        return '{:0.2f}%'.format(self.thisweekcomplatenum / self.invnum * 200)
-
-    complatedratio.short_description = '已完成百分比'
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '工程进度表'
-
-    def __str__(self):
-        return self.location + ' ' + self.code + ' ' + self.name
-
-
-# 计量进度表
-class MeasuringSchedule(models.Model):
-    location = models.CharField('单项工程位置', max_length=64)
-    code = models.CharField('项目编号', max_length=64)
-    name = models.CharField('项目名称', max_length=64)
-    unit = models.ForeignKey('bases.Unit', on_delete=models.PROTECT, verbose_name='单位')
-    invnum = models.DecimalField('清单数量', max_digits=13, decimal_places=3, default=0)
-    invprice = models.DecimalField('清单单价', max_digits=13, decimal_places=2, default=0)
-    changenum = models.DecimalField('工程变更增减数量', max_digits=13, decimal_places=3, default=0)
-    changeprice = models.DecimalField('工程变更增减单价', max_digits=13, decimal_places=2, default=0)
-
-    def invmoney(self):
-        return format(self.invnum * self.invprice, '0,.2f')
-
-    def changemoney(self):
-        return format(self.changenum * self.changeprice, '0,.2f')
-
-    def nownum(self):
-        return format(self.invnum + self.changenum, '0.3f')
-
-    def nowmoney(self):
-        return format(self.invmoney() + self.changemoney(), '0,.2f')
-
-    invmoney.short_description = '清单金额'  # admin中要设置为只读
-    changemoney.short_description = '工程变更增减金额'
-    nownum.short_description = '变更后数量'
-    nowmoney.short_description = '变更后金额'
-    thisweekcomplatenum = models.DecimalField('到本期末累计完成数量', max_digits=13, decimal_places=3, default=0)
-    thisweekcomplatemoney = models.DecimalField('到本期末累计完成金额', max_digits=13, decimal_places=2, default=0)
-    lastweekcomplatenum = models.DecimalField('到上期末累计完成数量', max_digits=13, decimal_places=3, default=0)
-    lastweekcomplatemoney = models.DecimalField('到上期末累计完成金额', max_digits=13, decimal_places=2, default=0)
-    thiscomplatenum = models.DecimalField('本期完成数量', max_digits=13, decimal_places=3, default=0)
-    thiscomplatemoney = models.DecimalField('本期完成金额', max_digits=13, decimal_places=2, default=0)
-
-    def complatedratio(self):
-        return '{:0.2f}%'.format(self.thisweekcomplatenum / self.invnum * 200)
-
-    complatedratio.short_description = '已完成百分比'
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '计量进度表'
-
-    def __str__(self):
-        return self.location + ' ' + self.code + ' ' + self.name
+# # 工程进度表
+# class JobSchedule(models.Model):
+#     location = models.CharField('单项工程位置', max_length=64)
+#     code = models.CharField('项目编号', max_length=64)
+#     name = models.CharField('项目名称', max_length=64)
+#     unit = models.ForeignKey('bases.Unit', on_delete=models.PROTECT, verbose_name='单位')
+#     invnum = models.DecimalField('清单数量', max_digits=13, decimal_places=3, default=0)
+#     invprice = models.DecimalField('清单单价', max_digits=13, decimal_places=2, default=0)
+#     changenum = models.DecimalField('工程变更增减数量', max_digits=13, decimal_places=3, default=0)
+#     changeprice = models.DecimalField('工程变更增减单价', max_digits=13, decimal_places=2, default=0)
+#
+#     def invmoney(self):
+#         return format(self.invnum * self.invprice, '0,.2f')
+#
+#     def changemoney(self):
+#         return format(self.changenum * self.changeprice, '0,.2f')
+#
+#     def nownum(self):
+#         return format(self.invnum + self.changenum, '0.3f')
+#
+#     def nowmoney(self):
+#         return format(self.invmoney() + self.changemoney(), '0,.2f')
+#
+#     invmoney.short_description = '清单金额'  # admin中要设置为只读
+#     changemoney.short_description = '工程变更增减金额'
+#     nownum.short_description = '变更后数量'
+#     nowmoney.short_description = '变更后金额'
+#     thisweekcomplatenum = models.DecimalField('到本期末累计完成数量', max_digits=13, decimal_places=3, default=0)
+#     thisweekcomplatemoney = models.DecimalField('到本期末累计完成金额', max_digits=13, decimal_places=2, default=0)
+#     lastweekcomplatenum = models.DecimalField('到上期末累计完成数量', max_digits=13, decimal_places=3, default=0)
+#     lastweekcomplatemoney = models.DecimalField('到上期末累计完成金额', max_digits=13, decimal_places=2, default=0)
+#     thiscomplatenum = models.DecimalField('本期完成数量', max_digits=13, decimal_places=3, default=0)
+#     thiscomplatemoney = models.DecimalField('本期完成金额', max_digits=13, decimal_places=2, default=0)
+#
+#     def complatedratio(self):
+#         return '{:0.2f}%'.format(self.thisweekcomplatenum / self.invnum * 200)
+#
+#     complatedratio.short_description = '已完成百分比'
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '工程进度表'
+#
+#     def __str__(self):
+#         return self.location + ' ' + self.code + ' ' + self.name
+#
+#
+# # 计量进度表
+# class MeasuringSchedule(models.Model):
+#     location = models.CharField('单项工程位置', max_length=64)
+#     code = models.CharField('项目编号', max_length=64)
+#     name = models.CharField('项目名称', max_length=64)
+#     unit = models.ForeignKey('bases.Unit', on_delete=models.PROTECT, verbose_name='单位')
+#     invnum = models.DecimalField('清单数量', max_digits=13, decimal_places=3, default=0)
+#     invprice = models.DecimalField('清单单价', max_digits=13, decimal_places=2, default=0)
+#     changenum = models.DecimalField('工程变更增减数量', max_digits=13, decimal_places=3, default=0)
+#     changeprice = models.DecimalField('工程变更增减单价', max_digits=13, decimal_places=2, default=0)
+#
+#     def invmoney(self):
+#         return format(self.invnum * self.invprice, '0,.2f')
+#
+#     def changemoney(self):
+#         return format(self.changenum * self.changeprice, '0,.2f')
+#
+#     def nownum(self):
+#         return format(self.invnum + self.changenum, '0.3f')
+#
+#     def nowmoney(self):
+#         return format(self.invmoney() + self.changemoney(), '0,.2f')
+#
+#     invmoney.short_description = '清单金额'  # admin中要设置为只读
+#     changemoney.short_description = '工程变更增减金额'
+#     nownum.short_description = '变更后数量'
+#     nowmoney.short_description = '变更后金额'
+#     thisweekcomplatenum = models.DecimalField('到本期末累计完成数量', max_digits=13, decimal_places=3, default=0)
+#     thisweekcomplatemoney = models.DecimalField('到本期末累计完成金额', max_digits=13, decimal_places=2, default=0)
+#     lastweekcomplatenum = models.DecimalField('到上期末累计完成数量', max_digits=13, decimal_places=3, default=0)
+#     lastweekcomplatemoney = models.DecimalField('到上期末累计完成金额', max_digits=13, decimal_places=2, default=0)
+#     thiscomplatenum = models.DecimalField('本期完成数量', max_digits=13, decimal_places=3, default=0)
+#     thiscomplatemoney = models.DecimalField('本期完成金额', max_digits=13, decimal_places=2, default=0)
+#
+#     def complatedratio(self):
+#         return '{:0.2f}%'.format(self.thisweekcomplatenum / self.invnum * 200)
+#
+#     complatedratio.short_description = '已完成百分比'
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '计量进度表'
+#
+#     def __str__(self):
+#         return self.location + ' ' + self.code + ' ' + self.name
 
 
 # 合同支付
 class ContractPay(models.Model):
-    contract = models.ForeignKey('Contract', on_delete=models.CASCADE, verbose_name='合同')
-    date = models.DateField('日期')
-    money = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
+    合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
+    日期 = models.DateField()
+    支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
+    日期 = models.DateField(auto_now=True)
 
     class Meta:
         verbose_name_plural = verbose_name = '合同支付'
 
     def __str__(self):
-        return self.contract
+        return str(self.合同) + ' ' + self.id
 
 
 # 合同
 class Contract(models.Model):
-    name = models.CharField('合同名称', max_length=64)
-    content = models.CharField('合同内容', max_length=64)
-    contact = models.CharField('合作联系人', max_length=64)
-    telphone = models.CharField('合作人电话', max_length=64)
-    price = models.DecimalField('合同单价', max_digits=13, decimal_places=2)
-    money = models.DecimalField('合同总价', max_digits=13, decimal_places=2)
-    status = models.SmallIntegerField('完成状态', choices=contract_choices, default=0)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
+    合同名称 = models.CharField(max_length=64)
+    合同内容 = models.CharField(max_length=64)
+    合作联系人 = models.CharField(max_length=64)
+    合作人电话 = models.CharField(max_length=64)
+    合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
+    合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
+    完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
+    日期 = models.DateField(auto_now=True)
 
     def payed(self):
-        summoney = ContractPay.objects.filter(contract=self.id).annotate(payed=models.Sum('money')).only('payed')
+        summoney = ContractPay.objects.filter(合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
         return summoney['payed'] if (summoney['payed'] is not None) else 0
 
-    payed.short_description = '已支付'
+    payed.short_description = '已支付金额'
 
     def balance(self):
-        return self.money - self.payed()
+        return self.合同总价 - self.payed()
 
     balance.short_description = '剩余金额'
 
@@ -141,7 +141,7 @@ class Contract(models.Model):
         verbose_name_plural = verbose_name = '合同'
 
     def __str__(self):
-        return self.name
+        return self.合同名称
 
 
 # 子合同支付
@@ -161,28 +161,29 @@ class SubContractPay(models.Model):
 
 # 子合同
 class SubContract(models.Model):
-    parentcontract = models.ForeignKey('Contract', on_delete=models.CASCADE, verbose_name='主合同')
-    name = models.CharField('合同名称', max_length=64)
-    content = models.CharField('合同内容', max_length=64)
-    contact = models.CharField('合作联系人', max_length=64)
-    telphone = models.CharField('合作人电话', max_length=64)
-    price = models.DecimalField('合同单价', max_digits=13, decimal_places=2)
-    money = models.DecimalField('合同总价', max_digits=13, decimal_places=2)
-    status = models.SmallIntegerField('完成状态', choices=contract_choices, default=0)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
+    主合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
+    合同名称 = models.CharField(max_length=64)
+    合同内容 = models.CharField(max_length=64)
+    合作联系人 = models.CharField(max_length=64)
+    合作人电话 = models.CharField(max_length=64)
+    合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
+    合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
+    完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
+    日期 = models.DateField(auto_now=True)
 
     def payed(self):
-        summoney = ContractPay.objects.filter(subcontract=self.id).annotate(payed=models.Sum('money')).only('payed')
+        # summoney = self.SubContract_ret.annotate(payed=models.Sum('支付金额')).only('payed')
+        summoney = ContractPay.objects.filter(子合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
         return summoney['payed'] if (summoney['payed'] is not None) else 0
 
-    payed.short_description = '已支付'
+    payed.short_description = '已支付金额'
 
     class Meta:
         verbose_name_plural = verbose_name = '子合同'
 
     def __str__(self):
-        return self.name
+        return self.合同名称
 
 
 # 材料图算量
