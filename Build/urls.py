@@ -25,4 +25,5 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
     path('', xadmin.site.urls),
     path('', include('bases.urls')),
+    path('', include('construction.urls')),
 ]

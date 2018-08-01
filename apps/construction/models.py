@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 import datetime
-from ..bases.models import *
+from bases.models import *
 
 
 # # 工程进度表
@@ -106,13 +106,13 @@ class ContractPay(models.Model):
     合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
     日期 = models.DateField()
     支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
-    制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = verbose_name = '合同支付'
 
     def __str__(self):
-        return self.单号
+        return str(self.单号)
 
 
 # 合同
@@ -124,10 +124,10 @@ class Contract(models.Model):
     合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
     合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
     完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
-    制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
     日期 = models.DateField(auto_now=True)
-    已支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
-    剩余金额 = models.DecimalField(max_digits=13, decimal_places=2)
+    已支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    剩余金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
 
     # def payed(self):
     #     summoney = ContractPay.objects.filter(合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
@@ -145,7 +145,6 @@ class Contract(models.Model):
 
     def __str__(self):
         return self.合同名称
-
 
 # # 子合同支付
 # class SubContractPay(models.Model):

@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'reversion',
     'bases.apps.BasesConfig',
-    # 'construction.apps.ConstructionConfig',
+    'construction.apps.ConstructionConfig',
     # 'develop.apps.DevelopConfig',
 ]
 
