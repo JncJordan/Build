@@ -32,14 +32,13 @@ class ContractAdmin(object):
         self.new_obj.save()
 
     def save_related(self):
-        self.form_obj.save_m2m()
+        super(ContractAdmin, self).save_related()
+
         contract = Contract.objects.filter(id=self.new_obj.id).first()
         summoney = ContractPay.objects.filter(合同=contract).aggregate(payed=models.Sum('支付金额'))['payed']
         contract.已支付金额 = summoney if summoney is not None else 0
-        # contract.已支付金额 = contract.已支付金额 + self.new_obj.支付金额
         contract.剩余金额 = contract.合同总价 - contract.已支付金额
         contract.save()
-
 
 
 class ContractPayAdmin(object):
@@ -54,17 +53,28 @@ class ContractPayAdmin(object):
     model_icon = 'fa fa-credit-card'
     aggregate_fields = {'支付金额': 'sum', '单号': 'count'}
 
-    def save_models(self):
-        self.new_obj.制单人 = self.request.user
-        self.new_obj.save()
-        contract = Contract.objects.filter(id=self.new_obj.合同_id).first()
-        # summoney = ContractPay.objects.filter(合同=contract).exclude(id=self.new_obj.id).values('合同').annotate(payed=models.Sum('支付金额'))[0]
-        # contract.已支付金额 = summoney['payed'] if (summoney['payed'] is not None) else 0
-        summoney = ContractPay.objects.filter(合同=contract).exclude(id=self.new_obj.id).aggregate(payed=models.Sum('支付金额'))['payed']
+    def sumpay(self, contract_id):
+        '''
+        计算合同主表"已支付金额"和"剩余金额"
+        :param contract_id:合同 id
+        :return:
+        '''
+        contract = Contract.objects.filter(id=contract_id).first()
+        summoney = ContractPay.objects.filter(合同=contract).aggregate(payed=models.Sum('支付金额'))['payed']
         contract.已支付金额 = summoney if summoney is not None else 0
-        contract.已支付金额 = contract.已支付金额 + self.new_obj.支付金额
         contract.剩余金额 = contract.合同总价 - contract.已支付金额
         contract.save()
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        # self.new_obj.save()
+        super(ContractPayAdmin, self).save_models()
+        self.sumpay(self.new_obj.合同_id)
+
+    def delete_models(self, queryset):
+        contract_id = queryset.first().合同_id
+        super(ContractPayAdmin, self).delete_models(queryset)
+        self.sumpay(contract_id)
 
 
 xadmin.site.register(Contract, ContractAdmin)
