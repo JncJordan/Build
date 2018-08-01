@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
+from django.db import models
 import datetime
-from bases.models import *
+from ..bases.models import *
 
 
 # # 工程进度表
@@ -101,17 +102,17 @@ from bases.models import *
 
 # 合同支付
 class ContractPay(models.Model):
+    单号 = models.CharField(max_length=64)
     合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
     日期 = models.DateField()
     支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
-    日期 = models.DateField(auto_now=True)
 
     class Meta:
         verbose_name_plural = verbose_name = '合同支付'
 
     def __str__(self):
-        return str(self.合同) + ' ' + self.id
+        return self.单号
 
 
 # 合同
@@ -125,17 +126,19 @@ class Contract(models.Model):
     完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
     日期 = models.DateField(auto_now=True)
+    已支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
+    剩余金额 = models.DecimalField(max_digits=13, decimal_places=2)
 
-    def payed(self):
-        summoney = ContractPay.objects.filter(合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
-        return summoney['payed'] if (summoney['payed'] is not None) else 0
-
-    payed.short_description = '已支付金额'
-
-    def balance(self):
-        return self.合同总价 - self.payed()
-
-    balance.short_description = '剩余金额'
+    # def payed(self):
+    #     summoney = ContractPay.objects.filter(合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
+    #     return summoney['payed'] if (summoney['payed'] is not None) else 0
+    #
+    # payed.short_description = '已支付金额'
+    #
+    # def balance(self):
+    #     return self.合同总价 - self.payed()
+    #
+    # balance.short_description = '剩余金额'
 
     class Meta:
         verbose_name_plural = verbose_name = '合同'
@@ -144,208 +147,207 @@ class Contract(models.Model):
         return self.合同名称
 
 
-# 子合同支付
-class SubContractPay(models.Model):
-    subcontract = models.ForeignKey('SubContract', on_delete=models.CASCADE, verbose_name='子合同')
-    date = models.DateField('日期')
-    money = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '子合同支付'
-
-    def __str__(self):
-        return self.subcontract
-
-
-# 子合同
-class SubContract(models.Model):
-    主合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
-    合同名称 = models.CharField(max_length=64)
-    合同内容 = models.CharField(max_length=64)
-    合作联系人 = models.CharField(max_length=64)
-    合作人电话 = models.CharField(max_length=64)
-    合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
-    合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
-    完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
-    制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
-    日期 = models.DateField(auto_now=True)
-
-    def payed(self):
-        # summoney = self.SubContract_ret.annotate(payed=models.Sum('支付金额')).only('payed')
-        summoney = ContractPay.objects.filter(子合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
-        return summoney['payed'] if (summoney['payed'] is not None) else 0
-
-    payed.short_description = '已支付金额'
-
-    class Meta:
-        verbose_name_plural = verbose_name = '子合同'
-
-    def __str__(self):
-        return self.合同名称
-
-
-# 材料图算量
-class Budget(models.Model):
-    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
-    price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-    num = models.DecimalField('图算量', max_digits=13, decimal_places=3)
-    money = models.DecimalField('图算金额', max_digits=13, decimal_places=2)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '材料图算量'
-
-    def __str__(self):
-        return self.material
-
-
-# 材料入库
-class MaterialInRecord(models.Model):
-    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
-    price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-    num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-    money = models.DecimalField('金额', max_digits=13, decimal_places=2)
-    docdate = models.DateField('日期')
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '材料入库'
-
-    def __str__(self):
-        return self.material
-
-
-# 材料出库
-class MaterialOutRecord(models.Model):
-    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
-    price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-    num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-    money = models.DecimalField('金额', max_digits=13, decimal_places=2)
-    docdate = models.DateField('日期')
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '材料出库'
-
-    def __str__(self):
-        return self.material
-
-
-# 材料仓库现存量
-class Stock(models.Model):
-    material = models.ForeignKey('bases.Material', on_delete=models.CASCADE, verbose_name='材料')
-    num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '材料库存'
-
-    def __str__(self):
-        return self.material
-
-
-# 租赁管理-归还
-class LeaseOutRecord(models.Model):
-    docid = models.ForeignKey('LeaseInRecord', on_delete=models.CASCADE, verbose_name='租入单号')
-    returndate = models.DateField('归还时间')
-    num = models.DecimalField('归还数量', max_digits=13, decimal_places=3)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '归还'
-
-    def __str__(self):
-        p = self.docid
-        return p.material
-
-
-# 租赁管理-租入
-class LeaseInRecord(models.Model):
-    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='名称')
-    price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-    leasedate = models.DateField('租赁时间')
-    num = models.DecimalField('租赁数量', max_digits=13, decimal_places=3)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    def returnnum(self):
-        sumreturn = LeaseOutRecord.objects.filter(docid=self.id).annotate(sumreturn=models.Sum('num')).only('sumreturn')
-        return sumreturn['sumreturn'] if (sumreturn['sumreturn'] is not None) else 0
-
-    returnnum.short_description = '归还数量'
-
-    def remainder(self):
-        return self.num - self.returnnum()
-
-    remainder.short_description = '剩余数量'
-
-    class Meta:
-        verbose_name_plural = verbose_name = '租入'
-
-    def __str__(self):
-        return self.material
-
-
-# 租赁管理-库存
-class LeaseStock(models.Model):
-    material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='名称')
-    price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-    num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-    startdate = models.DateField('租赁时间')
-    enddate = models.DateField('归还时间', blank=True, null=True)
-
-    def leaseday(self):
-        return self.enddate - self.startdate if self.enddate is not None else datetime.date.today() - self.startdate
-
-    leaseday.short_description = '租赁天数'
-
-    def leasemoney(self):
-        return self.leaseday() * self.price
-
-    leasemoney.short_description = '租赁金额'
-
-    class Meta:
-        verbose_name_plural = verbose_name = '租赁库存'
-
-    def __str__(self):
-        return self.material
-
-
-# 人工费用
-class LaborCost(models.Model):
-    code = models.CharField('结算单号', max_length=64)
-    name = models.CharField('项目', max_length=64)
-    settlementdate = models.DateField('结算时间', default=datetime.date.today())
-    settlementmoney = models.DecimalField('结算金额', max_digits=13, decimal_places=2)
-    memo = models.CharField('备注', max_length=128, blank=True, null=True)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '人工费用'
-
-    def __str__(self):
-        return self.code + ' ' + self.name
-
-
-# 人工费用支付
-class LaborPay(models.Model):
-    laborcost = models.ForeignKey('LaborCost', on_delete=models.CASCADE, verbose_name='人工费用')
-    paydate = models.DateField('日期', default=datetime.date.today())
-    paymoney = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
-    maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-    makedate = models.DateField('日期', auto_now=True)
-
-    class Meta:
-        verbose_name_plural = verbose_name = '人工费用支付'
-
-    def __str__(self):
-        return self.laborcost
+# # 子合同支付
+# class SubContractPay(models.Model):
+#     subcontract = models.ForeignKey('SubContract', on_delete=models.CASCADE, verbose_name='子合同')
+#     date = models.DateField('日期')
+#     money = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '子合同支付'
+#
+#     def __str__(self):
+#         return self.subcontract
+#
+#
+# # 子合同
+# class SubContract(models.Model):
+#     主合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
+#     合同名称 = models.CharField(max_length=64)
+#     合同内容 = models.CharField(max_length=64)
+#     合作联系人 = models.CharField(max_length=64)
+#     合作人电话 = models.CharField(max_length=64)
+#     合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
+#     合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
+#     完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
+#     制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
+#     日期 = models.DateField(auto_now=True)
+#
+#     def payed(self):
+#         # summoney = self.SubContract_ret.annotate(payed=models.Sum('支付金额')).only('payed')
+#         summoney = ContractPay.objects.filter(子合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
+#         return summoney['payed'] if (summoney['payed'] is not None) else 0
+#
+#     payed.short_description = '已支付金额'
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '子合同'
+#
+#     def __str__(self):
+#         return self.合同名称
+#
+# # 材料图算量
+# class Budget(models.Model):
+#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
+#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
+#     num = models.DecimalField('图算量', max_digits=13, decimal_places=3)
+#     money = models.DecimalField('图算金额', max_digits=13, decimal_places=2)
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '材料图算量'
+#
+#     def __str__(self):
+#         return self.material
+#
+#
+# # 材料入库
+# class MaterialInRecord(models.Model):
+#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
+#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
+#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
+#     money = models.DecimalField('金额', max_digits=13, decimal_places=2)
+#     docdate = models.DateField('日期')
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '材料入库'
+#
+#     def __str__(self):
+#         return self.material
+#
+#
+# # 材料出库
+# class MaterialOutRecord(models.Model):
+#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
+#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
+#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
+#     money = models.DecimalField('金额', max_digits=13, decimal_places=2)
+#     docdate = models.DateField('日期')
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '材料出库'
+#
+#     def __str__(self):
+#         return self.material
+#
+#
+# # 材料仓库现存量
+# class Stock(models.Model):
+#     material = models.ForeignKey('bases.Material', on_delete=models.CASCADE, verbose_name='材料')
+#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '材料库存'
+#
+#     def __str__(self):
+#         return self.material
+#
+#
+# # 租赁管理-归还
+# class LeaseOutRecord(models.Model):
+#     docid = models.ForeignKey('LeaseInRecord', on_delete=models.CASCADE, verbose_name='租入单号')
+#     returndate = models.DateField('归还时间')
+#     num = models.DecimalField('归还数量', max_digits=13, decimal_places=3)
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '归还'
+#
+#     def __str__(self):
+#         p = self.docid
+#         return p.material
+#
+#
+# # 租赁管理-租入
+# class LeaseInRecord(models.Model):
+#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='名称')
+#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
+#     leasedate = models.DateField('租赁时间')
+#     num = models.DecimalField('租赁数量', max_digits=13, decimal_places=3)
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     def returnnum(self):
+#         sumreturn = LeaseOutRecord.objects.filter(docid=self.id).annotate(sumreturn=models.Sum('num')).only('sumreturn')
+#         return sumreturn['sumreturn'] if (sumreturn['sumreturn'] is not None) else 0
+#
+#     returnnum.short_description = '归还数量'
+#
+#     def remainder(self):
+#         return self.num - self.returnnum()
+#
+#     remainder.short_description = '剩余数量'
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '租入'
+#
+#     def __str__(self):
+#         return self.material
+#
+#
+# # 租赁管理-库存
+# class LeaseStock(models.Model):
+#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='名称')
+#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
+#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
+#     startdate = models.DateField('租赁时间')
+#     enddate = models.DateField('归还时间', blank=True, null=True)
+#
+#     def leaseday(self):
+#         return self.enddate - self.startdate if self.enddate is not None else datetime.date.today() - self.startdate
+#
+#     leaseday.short_description = '租赁天数'
+#
+#     def leasemoney(self):
+#         return self.leaseday() * self.price
+#
+#     leasemoney.short_description = '租赁金额'
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '租赁库存'
+#
+#     def __str__(self):
+#         return self.material
+#
+#
+# # 人工费用
+# class LaborCost(models.Model):
+#     code = models.CharField('结算单号', max_length=64)
+#     name = models.CharField('项目', max_length=64)
+#     settlementdate = models.DateField('结算时间', default=datetime.date.today())
+#     settlementmoney = models.DecimalField('结算金额', max_digits=13, decimal_places=2)
+#     memo = models.CharField('备注', max_length=128, blank=True, null=True)
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '人工费用'
+#
+#     def __str__(self):
+#         return self.code + ' ' + self.name
+#
+#
+# # 人工费用支付
+# class LaborPay(models.Model):
+#     laborcost = models.ForeignKey('LaborCost', on_delete=models.CASCADE, verbose_name='人工费用')
+#     paydate = models.DateField('日期', default=datetime.date.today())
+#     paymoney = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
+#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
+#     makedate = models.DateField('日期', auto_now=True)
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '人工费用支付'
+#
+#     def __str__(self):
+#         return self.laborcost
 
 # 租赁费用
 # class LeaseCost(models.Model):

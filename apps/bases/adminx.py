@@ -31,17 +31,18 @@ class MaterialAdmin(object):
     relfield_style = 'fk-ajax'
 
 
-class SubProjectInline(object):
-    model = SubProject
-    extra = 0
-
-
 # 项目
 class ProjectAdmin(object):
     list_display = ('项目名称',)
     search_fields = ('项目名称',)
     model_icon = 'fa fa-university'
     relfield_style = 'fk-select'
+
+    class SubProjectInline(object):
+        model = SubProject
+        extra = 1
+        # style = 'tab'
+
     inlines = [SubProjectInline]
 
 
