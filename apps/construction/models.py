@@ -172,22 +172,26 @@ class SubContract(models.Model):
     def __str__(self):
         return self.合同名称
 
-# # 材料图算量
-# class Budget(models.Model):
-#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
-#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-#     num = models.DecimalField('图算量', max_digits=13, decimal_places=3)
-#     money = models.DecimalField('图算金额', max_digits=13, decimal_places=2)
-#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-#     makedate = models.DateField('日期', auto_now=True)
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '材料图算量'
-#
-#     def __str__(self):
-#         return self.material
-#
-#
+
+# 材料图算量
+class Budget(models.Model):
+    材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
+    单价 = models.DecimalField(max_digits=13, decimal_places=2)
+    图算量 = models.DecimalField(max_digits=13, decimal_places=3)
+    金额 = models.DecimalField(max_digits=13, decimal_places=2)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+    日期 = models.DateField(auto_now=True)
+    入库总数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    入库总金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    剩余还需购买数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    剩余还需购买金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料图算量'
+
+    def __str__(self):
+        return self.材料
+
 # # 材料入库
 # class MaterialInRecord(models.Model):
 #     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
