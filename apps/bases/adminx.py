@@ -12,6 +12,34 @@ class GlobalSetting(CommAdminView):
     menu_style = 'accordion'  # 菜单设置成折叠
 
 
+#     def get_site_menu(self):
+#         return [{
+#             'title': '我的统计',
+#             'icon': 'fa fa-users',
+#             'menus': (
+#                 {'title': '消费统计', 'url': '/mystatistics/busexpensedetails/index'},
+#                 {'title': '版本信息', 'url': '/mystatistics/version/index'},
+#             )
+#         }]
+#
+#
+# xadmin.site.register_view('mystatistics/busexpensedetails/index', BusExpenseDetailsAdminView, name='index')
+# xadmin.site.register_view('mystatistics/version/index', VersionInfoAdminView, name='index')
+#
+# class VersionInfoAdminView(CommAdminView):
+#     def get_breadcrumb(self):
+#         """获取头部面包屑导航"""
+#         breadcrumb = CommAdminView.get_breadcrumb(self)
+#         breadcrumb.append({'title': '版本信息', 'url': '/mystatistaics/version/index'})
+#         return breadcrumb
+#
+#     def get(self, request, *args, **kwargs):
+#         """
+#         @return TemplateResponse
+#         """
+#         return TemplateResponse(request, 'version_info_index.html', self.get_context())
+
+
 # 单位
 class UnitAdmin(object):
     list_display = ('单位',)

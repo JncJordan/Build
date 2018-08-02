@@ -129,64 +129,49 @@ class Contract(models.Model):
     已支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
     剩余金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
 
-    # def payed(self):
-    #     summoney = ContractPay.objects.filter(合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
-    #     return summoney['payed'] if (summoney['payed'] is not None) else 0
-    #
-    # payed.short_description = '已支付金额'
-    #
-    # def balance(self):
-    #     return self.合同总价 - self.payed()
-    #
-    # balance.short_description = '剩余金额'
-
     class Meta:
         verbose_name_plural = verbose_name = '合同'
 
     def __str__(self):
         return self.合同名称
 
-# # 子合同支付
-# class SubContractPay(models.Model):
-#     subcontract = models.ForeignKey('SubContract', on_delete=models.CASCADE, verbose_name='子合同')
-#     date = models.DateField('日期')
-#     money = models.DecimalField('支付金额', max_digits=13, decimal_places=2)
-#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-#     makedate = models.DateField('日期', auto_now=True)
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '子合同支付'
-#
-#     def __str__(self):
-#         return self.subcontract
-#
-#
-# # 子合同
-# class SubContract(models.Model):
-#     主合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
-#     合同名称 = models.CharField(max_length=64)
-#     合同内容 = models.CharField(max_length=64)
-#     合作联系人 = models.CharField(max_length=64)
-#     合作人电话 = models.CharField(max_length=64)
-#     合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
-#     合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
-#     完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
-#     制单人 = models.ForeignKey(User, on_delete=models.PROTECT)
-#     日期 = models.DateField(auto_now=True)
-#
-#     def payed(self):
-#         # summoney = self.SubContract_ret.annotate(payed=models.Sum('支付金额')).only('payed')
-#         summoney = ContractPay.objects.filter(子合同=self.id).annotate(payed=models.Sum('支付金额')).only('payed')
-#         return summoney['payed'] if (summoney['payed'] is not None) else 0
-#
-#     payed.short_description = '已支付金额'
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '子合同'
-#
-#     def __str__(self):
-#         return self.合同名称
-#
+
+# 子合同支付
+class SubContractPay(models.Model):
+    单号 = models.CharField(max_length=64)
+    子合同 = models.ForeignKey('SubContract', on_delete=models.CASCADE)
+    日期 = models.DateField('日期')
+    支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '子合同支付'
+
+    def __str__(self):
+        return self.单号
+
+
+# 子合同
+class SubContract(models.Model):
+    主合同 = models.ForeignKey('Contract', on_delete=models.CASCADE)
+    合同名称 = models.CharField(max_length=64)
+    合同内容 = models.CharField(max_length=64)
+    合作联系人 = models.CharField(max_length=64)
+    合作人电话 = models.CharField(max_length=64)
+    合同单价 = models.DecimalField(max_digits=13, decimal_places=2)
+    合同总价 = models.DecimalField(max_digits=13, decimal_places=2)
+    完成状态 = models.SmallIntegerField(choices=合同状态, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+    日期 = models.DateField(auto_now=True)
+    已支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    剩余金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '子合同'
+
+    def __str__(self):
+        return self.合同名称
+
 # # 材料图算量
 # class Budget(models.Model):
 #     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
