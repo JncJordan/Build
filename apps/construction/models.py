@@ -178,7 +178,7 @@ class Budget(models.Model):
     材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
     单价 = models.DecimalField(max_digits=13, decimal_places=2)
     图算量 = models.DecimalField(max_digits=13, decimal_places=3)
-    金额 = models.DecimalField(max_digits=13, decimal_places=2)
+    金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
     日期 = models.DateField(auto_now=True)
     入库总数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
@@ -190,7 +190,7 @@ class Budget(models.Model):
         verbose_name_plural = verbose_name = '材料图算量'
 
     def __str__(self):
-        return self.材料
+        return str(self.材料)
 
 # # 材料入库
 # class MaterialInRecord(models.Model):

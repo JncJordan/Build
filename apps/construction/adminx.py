@@ -3,6 +3,7 @@ from xadmin.views import CommAdminView
 import xadmin
 from django.contrib import admin
 from django.db.models import When, Case
+from django.forms import Media
 
 from .models import *
 
@@ -17,7 +18,7 @@ class ContractAdmin(object):
     # list_exclude=()
     list_select_related = None
 
-    list_per_page = 1
+    list_per_page = 50
     list_max_show_all = 200
     # paginator_class = Paginator
     # ordering = None
@@ -29,6 +30,7 @@ class ContractAdmin(object):
     search_fields = ('合同名称', '合同内容', '合作联系人')
     list_filter = ('合同名称', '合同内容', '合作联系人', '合作人电话', '完成状态', '已支付金额', '剩余金额')
     exclude = ('已支付金额', '剩余金额', '制单人')
+    list_editable = ['完成状态']
     model_icon = 'fa fa-sticky-note-o'
     relfield_style = 'fk-select'
 
@@ -73,6 +75,8 @@ class ContractPayAdmin(object):
     exclude = ('制单人',)
     model_icon = 'fa fa-credit-card'
     aggregate_fields = {'支付金额': 'sum', '单号': 'count'}
+    list_per_page = 50
+    list_max_show_all = 200
 
     def sumpay(self, contract_id):
         '''
@@ -120,6 +124,8 @@ class SubContractAdmin(object):
     exclude = ('已支付金额', '剩余金额', '制单人')
     model_icon = 'fa fa-file-word-o'
     relfield_style = 'fk-select'
+    list_per_page = 50
+    list_max_show_all = 200
 
     class SubContractPayInline(object):
         '''
@@ -159,6 +165,8 @@ class SubContractPayAdmin(object):
     exclude = ('制单人',)
     model_icon = 'fa fa-credit-card-alt'
     aggregate_fields = {'支付金额': 'sum', '单号': 'count'}
+    list_per_page = 50
+    list_max_show_all = 200
 
     def sumpay(self, contract_id):
         '''
@@ -196,7 +204,48 @@ class SubContractPayAdmin(object):
         self.sumpay(contract_id)
 
 
+class BudgetAdmin(object):
+    '''
+    材料图算量
+    '''
+    list_display = ('材料', '单价', '图算量', '金额', '入库总数量', '入库总金额', '剩余还需购买数量', '剩余还需购买金额')
+    # list_display_links = ()
+    # list_display_links_details = False
+    # list_exclude=()
+    list_select_related = None
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    # ordering = None
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('材料__名称', '材料__规格')
+    list_filter = ('材料', '入库总数量', '入库总金额', '剩余还需购买数量', '剩余还需购买金额')
+    exclude = ('入库总数量', '入库总金额', '剩余还需购买数量', '剩余还需购买金额', '制单人')
+    model_icon = 'fa fa-file-text-o'
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        # self.new_obj.入库总数量=...
+        # self.new_obj.入库总金额=...
+        self.new_obj.金额 = self.new_obj.图算量 * self.new_obj.单价
+        self.new_obj.剩余还需购买数量 = self.new_obj.图算量 - self.new_obj.入库总数量
+        self.new_obj.剩余还需购买金额 = self.new_obj.金额 - self.new_obj.入库总金额
+        super(BudgetAdmin, self).save_models()
+
+    def get_media(self):
+        # return super(BudgetAdmin, self).get_media() + self.vendor('/js/budget.js')
+        # self.media = self.media + Media(js=[self.static('/js/budget.js')])
+        return super(BudgetAdmin, self).get_media() + Media(js=[self.static('/js/budget.js')])
+        # return self.media()
+
+
 xadmin.site.register(Contract, ContractAdmin)
 xadmin.site.register(ContractPay, ContractPayAdmin)
 xadmin.site.register(SubContract, SubContractAdmin)
 xadmin.site.register(SubContractPay, SubContractPayAdmin)
+xadmin.site.register(Budget, BudgetAdmin)
