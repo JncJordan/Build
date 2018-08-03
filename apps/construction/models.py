@@ -192,52 +192,78 @@ class Budget(models.Model):
     def __str__(self):
         return str(self.材料)
 
-# # 材料入库
-# class MaterialInRecord(models.Model):
-#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
-#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-#     money = models.DecimalField('金额', max_digits=13, decimal_places=2)
-#     docdate = models.DateField('日期')
-#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-#     makedate = models.DateField('日期', auto_now=True)
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '材料入库'
-#
-#     def __str__(self):
-#         return self.material
-#
-#
-# # 材料出库
-# class MaterialOutRecord(models.Model):
-#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='材料')
-#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-#     money = models.DecimalField('金额', max_digits=13, decimal_places=2)
-#     docdate = models.DateField('日期')
-#     maker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='填表人')
-#     makedate = models.DateField('日期', auto_now=True)
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '材料出库'
-#
-#     def __str__(self):
-#         return self.material
-#
-#
-# # 材料仓库现存量
-# class Stock(models.Model):
-#     material = models.ForeignKey('bases.Material', on_delete=models.CASCADE, verbose_name='材料')
-#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '材料库存'
-#
-#     def __str__(self):
-#         return self.material
-#
-#
+
+# 材料库存表
+class MaterialStock(models.Model):
+    '''
+    材料库存表
+    '''
+    材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
+    单位 = models.ForeignKey(Unit, on_delete=models.PROTECT)
+    入库数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    入库金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    库存数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    库存金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    平均单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    出库数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    出库金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    结算金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    欠款金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料汇总表'
+
+    def __str__(self):
+        return self.材料
+
+
+# 材料费用表
+class MaterialCost(MaterialStock):
+    class Meta:
+        verbose_name_plural = verbose_name = "材料费汇总"
+        proxy = True
+
+
+# 材料入库
+class MaterialInRecord(models.Model):
+    '''
+    材料入库
+    '''
+    单号 = models.CharField(max_length=64)
+    材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
+    单价 = models.DecimalField(max_digits=13, decimal_places=2)
+    数量 = models.DecimalField(max_digits=13, decimal_places=3)
+    金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    日期 = models.DateField()
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料入库'
+
+    def __str__(self):
+        return self.单号 + ' ' + self.材料
+
+
+# 材料出库
+class MaterialOutRecord(models.Model):
+    单号 = models.CharField(max_length=64)
+    材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
+    平均单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    日期 = models.DateField()
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料出库'
+
+    def __str__(self):
+        return self.单号 + ' ' + self.材料
+
 # # 租赁管理-归还
 # class LeaseOutRecord(models.Model):
 #     docid = models.ForeignKey('LeaseInRecord', on_delete=models.CASCADE, verbose_name='租入单号')

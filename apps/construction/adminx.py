@@ -238,10 +238,59 @@ class BudgetAdmin(object):
         super(BudgetAdmin, self).save_models()
 
     def get_media(self):
-        # return super(BudgetAdmin, self).get_media() + self.vendor('/js/budget.js')
-        # self.media = self.media + Media(js=[self.static('/js/budget.js')])
         return super(BudgetAdmin, self).get_media() + Media(js=[self.static('/js/budget.js')])
-        # return self.media()
+
+
+# 材料汇总表
+class MaterialStockAdmin(object):
+    '''
+    材料汇总表
+    '''
+    list_display = ('材料', '单位', '入库数量', '出库数量', '库存数量')
+    # list_display_links = ()
+    # list_display_links_details = False
+    list_exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_select_related = None
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    # ordering = None
+
+    # 去除增删改功能
+    remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('材料__名称', '材料__规格')
+    list_filter = ('材料', '入库数量', '出库数量', '库存数量')
+    # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    model_icon = 'fa fa-database'
+
+
+# 材料费用表
+class MaterialCostAdmin(object):
+    '''
+        材料费用汇总表
+        '''
+    list_display = ('材料', '单位', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
+    # list_display_links = ()
+    # list_display_links_details = False
+    list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_select_related = None
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    # ordering = None
+
+    # 去除增删改功能
+    remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('材料__名称', '材料__规格')
+    list_filter = ('材料','材料__名称', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
+    # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    model_icon = 'fa fa-table'
 
 
 xadmin.site.register(Contract, ContractAdmin)
@@ -249,3 +298,5 @@ xadmin.site.register(ContractPay, ContractPayAdmin)
 xadmin.site.register(SubContract, SubContractAdmin)
 xadmin.site.register(SubContractPay, SubContractPayAdmin)
 xadmin.site.register(Budget, BudgetAdmin)
+xadmin.site.register(MaterialStock, MaterialStockAdmin)
+xadmin.site.register(MaterialCost, MaterialCostAdmin)
