@@ -4,6 +4,7 @@ import xadmin
 from django.contrib import admin
 from django.db.models import When, Case
 from django.forms import Media
+from django.http import HttpResponseRedirect
 
 from .models import *
 
@@ -45,6 +46,7 @@ class ContractAdmin(object):
         model = ContractPay
         exclude = ('制单人',)
         extra = 1
+        style = 'table'
 
     inlines = [ContractPayInline]
 
@@ -135,6 +137,7 @@ class SubContractAdmin(object):
         model = SubContractPay
         exclude = ('制单人',)
         extra = 1
+        style = 'table'
 
     inlines = [SubContractPayInline]
 
@@ -479,6 +482,8 @@ class MaterialOutRecordAdmin(object):
     exclude = ('平均单价', '金额', '制单人',)
     model_icon = 'fa fa-minus-square'
 
+    relurl = {'材料': '/bases/material_stock/'}
+
     # 限定材料必须是有库存的
     def get_context(self):
         context = super(MaterialOutRecordAdmin, self).get_context()
@@ -500,6 +505,14 @@ class MaterialOutRecordAdmin(object):
         self.new_obj.金额 = self.new_obj.数量 * self.new_obj.平均单价
         super(MaterialOutRecordAdmin, self).save_models()
         addoutstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
+
+    # 捕捉保存的异常
+    def post(self, request, *args, **kwargs):
+        try:
+            super(MaterialInRecordAdmin, self).post(request, *args, **kwargs)
+        except Exception as err:
+            self.message_user('库存中没有此材料', 'error')
+            return HttpResponseRedirect(request.path)
 
     def delete_models(self, queryset):
         # 首先保存所有要删除的记录
@@ -527,3 +540,7 @@ xadmin.site.register(MaterialStock, MaterialStockAdmin)
 xadmin.site.register(MaterialCost, MaterialCostAdmin)
 xadmin.site.register(MaterialInRecord, MaterialInRecordAdmin)
 xadmin.site.register(MaterialOutRecord, MaterialOutRecordAdmin)
+
+from .views import *
+
+xadmin.site.register_view(r'^bases/material_stock/$', teststock, name='material_stock')
