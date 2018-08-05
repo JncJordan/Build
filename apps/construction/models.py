@@ -176,8 +176,8 @@ class SubContract(models.Model):
 # 材料图算量
 class Budget(models.Model):
     材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
-    单价 = models.DecimalField(max_digits=13, decimal_places=2)
-    图算量 = models.DecimalField(max_digits=13, decimal_places=3)
+    单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    图算量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
     金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
     日期 = models.DateField(auto_now=True)
@@ -199,7 +199,6 @@ class MaterialStock(models.Model):
     材料库存表
     '''
     材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
-    单位 = models.ForeignKey(Unit, on_delete=models.PROTECT)
     入库数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
     入库金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
 
@@ -218,7 +217,7 @@ class MaterialStock(models.Model):
         verbose_name_plural = verbose_name = '材料汇总表'
 
     def __str__(self):
-        return self.材料
+        return str(self.材料)
 
 
 # 材料费用表
@@ -245,7 +244,7 @@ class MaterialInRecord(models.Model):
         verbose_name_plural = verbose_name = '材料入库'
 
     def __str__(self):
-        return self.单号 + ' ' + self.材料
+        return self.单号 + ' ' + str(self.材料)
 
 
 # 材料出库
@@ -262,7 +261,7 @@ class MaterialOutRecord(models.Model):
         verbose_name_plural = verbose_name = '材料出库'
 
     def __str__(self):
-        return self.单号 + ' ' + self.材料
+        return self.单号 + ' ' + str(self.材料)
 
 # # 租赁管理-归还
 # class LeaseOutRecord(models.Model):

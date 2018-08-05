@@ -17,6 +17,7 @@ class ContractAdmin(object):
     # list_display_links_details = False
     # list_exclude=()
     list_select_related = None
+    aggregate_fields = {'合同单价': 'sum', '已支付金额': 'sum', '剩余金额': 'sum', '合同名称': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -213,6 +214,7 @@ class BudgetAdmin(object):
     # list_display_links_details = False
     # list_exclude=()
     list_select_related = None
+    aggregate_fields = {'图算量': 'sum', '金额': 'sum', '入库总数量': 'sum', '入库总金额': 'sum', '剩余还需购买数量': 'sum', '剩余还需购买金额': 'sum', '材料': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -241,16 +243,57 @@ class BudgetAdmin(object):
         return super(BudgetAdmin, self).get_media() + Media(js=[self.static('/js/budget.js')])
 
 
+# 增加图算量对应入库
+def addbudget(material, innum=0, inmoney=0):
+    '''
+    增加图算量对应入库
+    :param self:
+    :param material: 材料
+    :param innum: 入库数量
+    :param inmoney: 入库金额
+    :return:
+    '''
+    budget = Budget.objects.filter(材料=material).first()
+    if budget is None:
+        budget = Budget(材料=material)
+    budget.入库总数量 += innum
+    budget.入库总金额 += inmoney
+    budget.剩余还需购买数量 = budget.图算量 - budget.入库总数量
+    budget.剩余还需购买金额 = budget.金额 - budget.入库总金额
+    budget.save()
+
+
+# 减去图算量对应入库
+def subbudget(material, innum=0, inmoney=0):
+    '''
+    减去图算量对应入库
+    :param self:
+    :param material: 材料
+    :param innum: 入库数量
+    :param inmoney: 入库金额
+    :return:
+    '''
+    budget = Budget.objects.filter(材料=material).first()
+    if budget is None:
+        budget = Budget(材料=material)
+    budget.入库总数量 -= innum
+    budget.入库总金额 -= inmoney
+    budget.剩余还需购买数量 = budget.图算量 - budget.入库总数量
+    budget.剩余还需购买金额 = budget.金额 - budget.入库总金额
+    budget.save()
+
+
 # 材料汇总表
 class MaterialStockAdmin(object):
     '''
     材料汇总表
     '''
-    list_display = ('材料', '单位', '入库数量', '出库数量', '库存数量')
+    list_display = ('材料', '入库数量', '出库数量', '库存数量')
     # list_display_links = ()
     # list_display_links_details = False
     list_exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
     list_select_related = None
+    aggregate_fields = {'入库数量': 'sum', '出库数量': 'sum', '库存数量': 'sum', '材料': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -272,11 +315,12 @@ class MaterialCostAdmin(object):
     '''
         材料费用汇总表
         '''
-    list_display = ('材料', '单位', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
+    list_display = ('材料', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
     # list_display_links = ()
     # list_display_links_details = False
     list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
     list_select_related = None
+    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum', '材料': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -288,9 +332,190 @@ class MaterialCostAdmin(object):
 
     # show_bookmarks = False
     search_fields = ('材料__名称', '材料__规格')
-    list_filter = ('材料','材料__名称', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
+    list_filter = ('材料', '材料__名称', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
     # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
     model_icon = 'fa fa-table'
+
+
+def addinstock(material, num, money):
+    '''
+    增加对应材料库存数量
+    '''
+    # 查找对应的材料库存
+    materialstock = MaterialStock.objects.filter(材料=material).first()
+    if materialstock is None:  # 没有则新增
+        materialstock = MaterialStock(材料=material)
+    materialstock.入库数量 += num
+    materialstock.入库金额 += money
+    materialstock.库存数量 += num
+    materialstock.库存金额 += money
+    materialstock.平均单价 = materialstock.库存金额 / materialstock.库存数量 if materialstock.库存数量 != 0 else 0
+    materialstock.save()
+
+
+def subinstock(material, num, money):
+    '''
+    减去对应材料库存数量
+    '''
+    materialstock = MaterialStock.objects.filter(材料=material).first()
+    if materialstock is None:  # 没有则新增
+        materialstock = MaterialStock(材料=material)
+    materialstock.入库数量 -= num
+    materialstock.入库金额 -= money
+    materialstock.库存数量 -= num
+    materialstock.库存金额 -= money
+    materialstock.平均单价 = materialstock.库存金额 / materialstock.库存数量 if materialstock.库存数量 != 0 else 0
+    materialstock.save()
+
+
+def addoutstock(material, num, money):
+    '''
+    增加对应材料出库库存数量
+    '''
+    # 查找对应的材料库存
+    materialstock = MaterialStock.objects.filter(材料=material).first()
+    if materialstock is None:  # 没有则新增
+        materialstock = MaterialStock(材料=material)
+    materialstock.出库数量 += num
+    materialstock.出库金额 += money
+    materialstock.库存数量 -= num
+    materialstock.库存金额 -= money
+    materialstock.平均单价 = materialstock.库存金额 / materialstock.库存数量 if materialstock.库存数量 != 0 else 0
+    materialstock.save()
+
+
+def suboutstock(material, num, money):
+    '''
+    减去对应材料出库库存数量
+    '''
+    materialstock = MaterialStock.objects.filter(材料=material).first()
+    if materialstock is None:  # 没有则新增
+        materialstock = MaterialStock(材料=material)
+    materialstock.出库数量 -= num
+    materialstock.出库金额 -= money
+    materialstock.库存数量 += num
+    materialstock.库存金额 += money
+    materialstock.平均单价 = materialstock.库存金额 / materialstock.库存数量 if materialstock.库存数量 != 0 else 0
+    materialstock.save()
+
+
+# 材料入库
+class MaterialInRecordAdmin(object):
+    '''
+    材料入库
+    '''
+    list_display = ('单号', '材料', '单价', '数量', '金额', '日期', '制单人')
+    list_display_links = ('单号', '材料')
+    # list_display_links_details = False
+    # list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_select_related = None
+    aggregate_fields = {'数量': 'sum', '金额': 'sum', '单号': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('单号', '材料__名称', '材料__规格')
+    list_filter = ('单号', '材料', '单价', '数量', '金额', '日期', '制单人')
+    exclude = ('制单人',)
+    model_icon = 'fa fa-plus-square'
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(MaterialInRecordAdmin, self).save_models()
+        addinstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
+        addbudget(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
+
+    def delete_models(self, queryset):
+        # 首先保存所有要删除的记录
+        inrecords = []
+        for item in queryset:
+            inrecords.append(item)
+
+        super(MaterialInRecordAdmin, self).delete_models(queryset)
+
+        for inrecord in inrecords:
+            subinstock(inrecord.材料, inrecord.数量, inrecord.金额)
+            subbudget(inrecord.材料, inrecord.数量, inrecord.金额)
+
+    def delete_model(self):
+        inrecord = self.obj
+        super(MaterialInRecordAdmin, self).delete_model()
+        subinstock(inrecord.材料, inrecord.数量, inrecord.金额)
+        subbudget(inrecord.材料, inrecord.数量, inrecord.金额)
+
+    def get_media(self):
+        return super(MaterialInRecordAdmin, self).get_media() + Media(js=[self.static('/js/materialin.js')])
+
+
+# 材料出库
+class MaterialOutRecordAdmin(object):
+    '''
+    材料出库
+    '''
+    list_display = ('单号', '材料', '平均单价', '数量', '金额', '日期', '制单人')
+    list_display_links = ('单号', '材料')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    list_select_related = None
+    aggregate_fields = {'数量': 'sum', '金额': 'sum', '单号': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('单号', '材料__名称', '材料__规格')
+    list_filter = ('单号', '材料', '平均单价', '数量', '金额', '日期', '制单人')
+    exclude = ('平均单价', '金额', '制单人',)
+    model_icon = 'fa fa-minus-square'
+
+    # 限定材料必须是有库存的
+    def get_context(self):
+        context = super(MaterialOutRecordAdmin, self).get_context()
+        if 'form' in context:
+            context['form'].fields['材料'].queryset = Material.objects.filter(
+                id__in=MaterialStock.objects.exclude(库存数量=0).values_list('材料_id', flat=True))
+            # Material.objects.filter(id__in=list(MaterialStock.objects.exclude(库存数量=0).values_list('材料_id',flat=True)))
+        return context
+        # Model.objects.filter(xx__in=queryset)
+        # Model.objects.filter(xx__in=list(queryset.values_list('id',flat=True)))
+        # 后一种更有效率
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        stock = MaterialStock.objects.filter(材料=self.new_obj.材料).first()
+        if stock is None:
+            raise Exception('库存中没有此材料')
+        self.new_obj.平均单价 = stock.平均单价
+        self.new_obj.金额 = self.new_obj.数量 * self.new_obj.平均单价
+        super(MaterialOutRecordAdmin, self).save_models()
+        addoutstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
+
+    def delete_models(self, queryset):
+        # 首先保存所有要删除的记录
+        inrecords = []
+        for item in queryset:
+            inrecords.append(item)
+
+        super(MaterialOutRecordAdmin, self).delete_models(queryset)
+
+        for inrecord in inrecords:
+            suboutstock(inrecord.材料, inrecord.数量, inrecord.金额)
+
+    def delete_model(self):
+        inrecord = self.obj
+        super(MaterialOutRecordAdmin, self).delete_model()
+        suboutstock(inrecord.材料, inrecord.数量, inrecord.金额)
 
 
 xadmin.site.register(Contract, ContractAdmin)
@@ -300,3 +525,5 @@ xadmin.site.register(SubContractPay, SubContractPayAdmin)
 xadmin.site.register(Budget, BudgetAdmin)
 xadmin.site.register(MaterialStock, MaterialStockAdmin)
 xadmin.site.register(MaterialCost, MaterialCostAdmin)
+xadmin.site.register(MaterialInRecord, MaterialInRecordAdmin)
+xadmin.site.register(MaterialOutRecord, MaterialOutRecordAdmin)

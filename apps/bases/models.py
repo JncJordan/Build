@@ -27,7 +27,7 @@ class Material(models.Model):
     单位 = models.ForeignKey(Unit, on_delete=models.PROTECT)
 
     def __str__(self):
-        return self.名称 + ' ' + self.规格
+        return self.名称 + ' [' + self.规格 + '] ' + str(self.单位)
 
     class Meta:
         verbose_name_plural = verbose_name = '材料'

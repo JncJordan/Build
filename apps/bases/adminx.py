@@ -55,8 +55,8 @@ class MaterialAdmin(object):
     search_fields = ('名称', '规格')  # 要查询的列
     list_filter = ('名称', '规格')  # 要筛选的列
     model_icon = 'fa fa-cubes'
-    raw_id_fields = ('单位',)  # 原 admin 才有此效果
-    relfield_style = 'fk-ajax'
+    # raw_id_fields = ('单位',)  # 原 admin 才有此效果
+    # relfield_style = 'fk-select' # 使用了之后，其他 Admin 中，自定义get_context获取材料的数据源失败
 
 
 # 项目
