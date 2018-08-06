@@ -13,6 +13,7 @@ from .models import MaterialStock
 
 # Create your views here.
 
+# 材料出库_rel_材料(必须是库存中有的材料)
 class material_stock(BaseAdminView):
     paginator_class = Paginator
 
@@ -21,7 +22,6 @@ class material_stock(BaseAdminView):
         querystr = request.GET.get('_q_')
         if (querystr is not None and querystr != ''):
             queryset = queryset.filter(Q(名称__contains=querystr) | Q(规格__contains=querystr))
-        result_list = queryset._clone()
         paginator = self.paginator_class(queryset, 50, 0, True)
         result_count = paginator.count
         result_list = paginator.page(1).object_list

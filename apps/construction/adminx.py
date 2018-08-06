@@ -503,25 +503,25 @@ class MaterialOutRecordAdmin(object):
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
+        flag = self.org_obj is None and 'create' or 'change'
+        if flag == 'change':
+            oldobj = MaterialOutRecord.objects.get(id=self.org_obj.id)
+            suboutstock(oldobj.材料, oldobj.数量, oldobj.金额)
         stock = MaterialStock.objects.filter(材料=self.new_obj.材料).first()
         if stock is None:
             raise Exception('库存中没有此材料')
         self.new_obj.平均单价 = stock.平均单价
         self.new_obj.金额 = self.new_obj.数量 * self.new_obj.平均单价
-        flag = self.org_obj is None and 'create' or 'change'
-        if flag == 'change':
-            oldobj = MaterialOutRecord.objects.get(id=self.org_obj.id)
-            suboutstock(oldobj.材料, oldobj.数量, oldobj.金额)
         super(MaterialOutRecordAdmin, self).save_models()
         addoutstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
 
-    # 捕捉保存的异常
-    def post(self, request, *args, **kwargs):
-        try:
-            super(MaterialInRecordAdmin, self).post(request, *args, **kwargs)
-        except Exception as err:
-            self.message_user('库存中没有此材料', 'error')
-            return HttpResponseRedirect(request.path)
+    # 捕捉保存的异常, 会报错 has_header
+    # def post(self, request, *args, **kwargs):
+    #     try:
+    #         super(MaterialOutRecordAdmin, self).post(request, *args, **kwargs)
+    #     except Exception as err:
+    #         self.message_user('库存中没有此材料', 'error')
+    #         return HttpResponseRedirect(request.path)
 
     def delete_models(self, queryset):
         # 首先保存所有要删除的记录
