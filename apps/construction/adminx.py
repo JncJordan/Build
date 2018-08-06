@@ -430,6 +430,11 @@ class MaterialInRecordAdmin(object):
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
+        flag = self.org_obj is None and 'create' or 'change'
+        if flag == 'change':
+            oldobj = MaterialInRecord.objects.get(id=self.org_obj.id)
+            subinstock(oldobj.材料, oldobj.数量, oldobj.金额)
+            subbudget(oldobj.材料, oldobj.数量, oldobj.金额)
         super(MaterialInRecordAdmin, self).save_models()
         addinstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
         addbudget(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
@@ -503,6 +508,10 @@ class MaterialOutRecordAdmin(object):
             raise Exception('库存中没有此材料')
         self.new_obj.平均单价 = stock.平均单价
         self.new_obj.金额 = self.new_obj.数量 * self.new_obj.平均单价
+        flag = self.org_obj is None and 'create' or 'change'
+        if flag == 'change':
+            oldobj = MaterialOutRecord.objects.get(id=self.org_obj.id)
+            suboutstock(oldobj.材料, oldobj.数量, oldobj.金额)
         super(MaterialOutRecordAdmin, self).save_models()
         addoutstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
 
@@ -543,4 +552,4 @@ xadmin.site.register(MaterialOutRecord, MaterialOutRecordAdmin)
 
 from .views import *
 
-xadmin.site.register_view(r'^bases/material_stock/$', teststock, name='material_stock')
+xadmin.site.register_view(r'^bases/material_stock/$', material_stock, name='material_stock')

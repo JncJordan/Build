@@ -24,8 +24,12 @@ class ForeignKeySearchWidget(forms.Widget):
             attrs['class'] = 'select-search'
         else:
             attrs['class'] = attrs['class'] + ' select-search'
-        attrs['data-search-url'] = self.admin_view.get_admin_url(
-            '%s_%s_changelist' % (to_opts.app_label, to_opts.model_name))
+        relurl = getattr(self.admin_view, 'relurl', None)
+        if (relurl is not None and self.rel.field.name in relurl):
+            attrs['data-search-url'] = relurl[self.rel.field.name]
+        if not 'data-search-url' in attrs:
+            attrs['data-search-url'] = self.admin_view.get_admin_url(
+                '%s_%s_changelist' % (to_opts.app_label, to_opts.model_name))
         attrs['data-placeholder'] = _('Search %s') % to_opts.verbose_name
         attrs['data-choices'] = '?'
         if self.rel.limit_choices_to:
