@@ -488,7 +488,7 @@ class MaterialOutRecordAdmin(object):
     exclude = ('平均单价', '金额', '制单人',)
     model_icon = 'fa fa-minus-square'
 
-    relurl = {'材料': '/bases/material_outrecord/'}
+    relurl = {'材料': '/rel/material_outrecord/'}
 
     # # 限定材料必须是有库存的(使用relurl后已经无用)
     # def get_context(self):
@@ -569,7 +569,7 @@ class MaterialCloseBillAdmin(object):
     exclude = ('已支付', '未支付', '制单人',)
     model_icon = 'fa fa-minus-square'
 
-    relurl = {'材料': '/bases/material_closebill/'}
+    relurl = {'材料': '/rel/material_closebill/'}
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
@@ -617,7 +617,7 @@ class MaterialPayAdmin(object):
     exclude = ('制单人',)
     model_icon = 'fa fa-minus-square'
 
-    relurl = {'结算单': '/bases/material_pay/'}
+    relurl = {'结算单': '/rel/material_pay/'}
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
@@ -638,6 +638,6 @@ xadmin.site.register(MaterialPay, MaterialPayAdmin)
 
 from .views import *
 
-xadmin.site.register_view(r'^bases/material_outrecord/$', material_outrecord, name='material_outrecord')
-xadmin.site.register_view(r'^bases/material_closebill/$', material_closebill, name='material_closebill')
-xadmin.site.register_view(r'^bases/material_pay/$', material_pay, name='material_pay')
+xadmin.site.register_view(r'^rel/material_outrecord/$', material_outrecord, name='material_outrecord')
+xadmin.site.register_view(r'^rel/material_closebill/$', material_closebill, name='material_closebill')
+xadmin.site.register_view(r'^rel/material_pay/$', material_pay, name='material_pay')
