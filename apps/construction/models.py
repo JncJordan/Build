@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 import datetime
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from bases.models import *
 
 
@@ -209,7 +211,12 @@ class MaterialStock(models.Model):
     出库数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
     出库金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
 
+    结算数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
     结算金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    未结算数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    未结算金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
     支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
     欠款金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
 
@@ -263,6 +270,125 @@ class MaterialOutRecord(models.Model):
     def __str__(self):
         return self.单号 + ' ' + str(self.材料)
 
+
+# 材料结算单
+class MaterialCloseBill(models.Model):
+    结算单 = models.CharField(max_length=64)
+    材料 = models.ForeignKey(Material, on_delete=models.PROTECT)
+    单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    已支付 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    未支付 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+    日期 = models.DateField()
+
+    def update_materialstock(self, material, num, money, payed, direction=1):
+        materialstock = MaterialStock.objects.get(材料=material)
+        materialstock.结算数量 += direction * num
+        materialstock.结算金额 += direction * money
+        materialstock.未结算数量 = materialstock.入库数量 - materialstock.结算数量
+        materialstock.未结算金额 = materialstock.入库金额 - materialstock.结算金额
+        materialstock.支付金额 += direction * payed
+        materialstock.欠款金额 = materialstock.结算金额 - materialstock.支付金额
+        materialstock.save()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            oldobj = MaterialCloseBill.objects.get(pk=self.pk)
+            if oldobj is not None:
+                self.update_materialstock(oldobj.材料, oldobj.数量, oldobj.金额, oldobj.已支付, -1)
+        self.未支付 = self.金额 - self.已支付
+        super().save(*args, **kwargs)
+        self.update_materialstock(self.材料, self.数量, self.金额, self.已支付)
+
+    # def delete(self, *args, **kwargs):
+    #     oldobj = MaterialCloseBill.objects.get(pk=self.pk)
+    #     if oldobj is not None:
+    #         self.update_materialstock(oldobj.材料, oldobj.数量, oldobj.金额, oldobj.已支付, -1)
+    #     super().delete(*args, **kwargs)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料结算'
+
+    def __str__(self):
+        return self.结算单 + ' ' + str(self.材料)
+
+
+# 已删除"材料结算"触发器
+@receiver(post_delete, sender=MaterialCloseBill)
+def update_materialclosebill(sender, instance, **kwargs):
+    materialstock = MaterialStock.objects.get(材料=instance.材料)
+    materialstock.结算数量 -= instance.数量
+    materialstock.结算金额 -= instance.金额
+    materialstock.未结算数量 = materialstock.入库数量 - materialstock.结算数量
+    materialstock.未结算金额 = materialstock.入库金额 - materialstock.结算金额
+    materialstock.支付金额 -= instance.已支付
+    materialstock.欠款金额 = materialstock.结算金额 - materialstock.支付金额
+    materialstock.save()
+
+
+# 材料支付
+class MaterialPay(models.Model):
+    结算单 = models.ForeignKey(MaterialCloseBill, on_delete=models.PROTECT)
+    支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
+    日期 = models.DateField()
+
+    def update_materialclosebill(self, closebill, payed, direction=1):
+        materialclosebill = MaterialCloseBill.objects.get(pk=closebill.pk)
+        materialclosebill.已支付 += direction * payed
+        materialclosebill.未支付 = materialclosebill.金额 - materialclosebill.已支付
+        materialclosebill.save()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            oldobj = MaterialPay.objects.get(pk=self.pk)
+            if oldobj is None:
+                pass
+            self.update_materialclosebill(oldobj.结算单, oldobj.支付金额, -1)
+        super().save(*args, **kwargs)
+        self.update_materialclosebill(self.结算单, self.支付金额)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '材料支付'
+
+    def __str__(self):
+        return str(self.结算单)
+
+
+# 已删除"材料支付"触发器
+@receiver(post_delete, sender=MaterialPay)
+def update_materialclosebill(sender, instance, **kwargs):
+    materialclosebill = MaterialCloseBill.objects.get(pk=instance.结算单.pk)
+    materialclosebill.已支付 += -1 * instance.支付金额
+    materialclosebill.未支付 = materialclosebill.金额 - materialclosebill.已支付
+    materialclosebill.save()
+
+# 租赁管理-库存
+# class LeaseStock(models.Model):
+#     材料设备 = models.ForeignKey('bases.Material', on_delete=models.PROTECT)
+#     租赁数量 = models.DecimalField('单价', max_digits=13, decimal_places=2)
+#     租赁
+#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
+#     startdate = models.DateField('租赁时间')
+#     enddate = models.DateField('归还时间', blank=True, null=True)
+#
+#     def leaseday(self):
+#         return self.enddate - self.startdate if self.enddate is not None else datetime.date.today() - self.startdate
+#
+#     leaseday.short_description = '租赁天数'
+#
+#     def leasemoney(self):
+#         return self.leaseday() * self.price
+#
+#     leasemoney.short_description = '租赁金额'
+#
+#     class Meta:
+#         verbose_name_plural = verbose_name = '租赁库存'
+#
+#     def __str__(self):
+#         return self.material
 # # 租赁管理-归还
 # class LeaseOutRecord(models.Model):
 #     docid = models.ForeignKey('LeaseInRecord', on_delete=models.CASCADE, verbose_name='租入单号')
@@ -306,31 +432,8 @@ class MaterialOutRecord(models.Model):
 #         return self.material
 #
 #
-# # 租赁管理-库存
-# class LeaseStock(models.Model):
-#     material = models.ForeignKey('bases.Material', on_delete=models.PROTECT, verbose_name='名称')
-#     price = models.DecimalField('单价', max_digits=13, decimal_places=2)
-#     num = models.DecimalField('数量', max_digits=13, decimal_places=3)
-#     startdate = models.DateField('租赁时间')
-#     enddate = models.DateField('归还时间', blank=True, null=True)
-#
-#     def leaseday(self):
-#         return self.enddate - self.startdate if self.enddate is not None else datetime.date.today() - self.startdate
-#
-#     leaseday.short_description = '租赁天数'
-#
-#     def leasemoney(self):
-#         return self.leaseday() * self.price
-#
-#     leasemoney.short_description = '租赁金额'
-#
-#     class Meta:
-#         verbose_name_plural = verbose_name = '租赁库存'
-#
-#     def __str__(self):
-#         return self.material
-#
-#
+
+
 # # 人工费用
 # class LaborCost(models.Model):
 #     code = models.CharField('结算单号', max_length=64)

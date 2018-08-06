@@ -294,7 +294,7 @@ class MaterialStockAdmin(object):
     list_display = ('材料', '入库数量', '出库数量', '库存数量')
     # list_display_links = ()
     # list_display_links_details = False
-    list_exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算数量', '结算金额', '未结算数量', '未结算金额', '支付金额', '欠款金额')
     list_select_related = None
     aggregate_fields = {'入库数量': 'sum', '出库数量': 'sum', '库存数量': 'sum', '材料': 'count'}
 
@@ -318,12 +318,13 @@ class MaterialCostAdmin(object):
     '''
         材料费用汇总表
         '''
-    list_display = ('材料', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
+    list_display = ('材料', '入库数量', '入库金额', '结算数量', '结算金额', '未结算数量', '未结算金额', '支付金额', '欠款金额')
     # list_display_links = ()
     # list_display_links_details = False
-    list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价')
     list_select_related = None
-    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum', '材料': 'count'}
+    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算数量': 'sum', '结算金额': 'sum', '未结算数量': 'sum', '未结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum',
+                        '材料': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -335,7 +336,7 @@ class MaterialCostAdmin(object):
 
     # show_bookmarks = False
     search_fields = ('材料__名称', '材料__规格')
-    list_filter = ('材料', '材料__名称', '入库数量', '入库金额', '结算金额', '支付金额', '欠款金额')
+    list_filter = ('材料', '材料__名称', '入库数量', '入库金额', '结算数量', '结算金额', '未结算数量', '未结算金额', '支付金额', '欠款金额')
     # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
     model_icon = 'fa fa-table'
 
@@ -487,19 +488,19 @@ class MaterialOutRecordAdmin(object):
     exclude = ('平均单价', '金额', '制单人',)
     model_icon = 'fa fa-minus-square'
 
-    relurl = {'材料': '/bases/material_stock/'}
+    relurl = {'材料': '/bases/material_outrecord/'}
 
-    # 限定材料必须是有库存的
-    def get_context(self):
-        context = super(MaterialOutRecordAdmin, self).get_context()
-        if 'form' in context:
-            context['form'].fields['材料'].queryset = Material.objects.filter(
-                id__in=MaterialStock.objects.exclude(库存数量=0).values_list('材料_id', flat=True))
-            # Material.objects.filter(id__in=list(MaterialStock.objects.exclude(库存数量=0).values_list('材料_id',flat=True)))
-        return context
-        # Model.objects.filter(xx__in=queryset)
-        # Model.objects.filter(xx__in=list(queryset.values_list('id',flat=True)))
-        # 后一种更有效率
+    # # 限定材料必须是有库存的(使用relurl后已经无用)
+    # def get_context(self):
+    #     context = super(MaterialOutRecordAdmin, self).get_context()
+    #     if 'form' in context:
+    #         context['form'].fields['材料'].queryset = Material.objects.filter(
+    #             id__in=MaterialStock.objects.exclude(库存数量=0).values_list('材料_id', flat=True))
+    #         # Material.objects.filter(id__in=list(MaterialStock.objects.exclude(库存数量=0).values_list('材料_id',flat=True)))
+    #     return context
+    #     # Model.objects.filter(xx__in=queryset)
+    #     # Model.objects.filter(xx__in=list(queryset.values_list('id',flat=True)))
+    #     # 后一种更有效率
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
@@ -515,7 +516,7 @@ class MaterialOutRecordAdmin(object):
         super(MaterialOutRecordAdmin, self).save_models()
         addoutstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
 
-    # 捕捉保存的异常, 会报错 has_header
+    # 捕捉保存的异常
     def post(self, request, *args, **kwargs):
         try:
             response = super(MaterialOutRecordAdmin, self).post(request, *args, **kwargs)
@@ -541,6 +542,88 @@ class MaterialOutRecordAdmin(object):
         suboutstock(inrecord.材料, inrecord.数量, inrecord.金额)
 
 
+# 材料结算
+class MaterialCloseBillAdmin(object):
+    '''
+    材料结算
+    '''
+    list_display = ('结算单', '材料', '单价', '数量', '金额', '已支付', '未支付', '日期', '制单人')
+    list_display_links = ('结算单', '材料')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    list_select_related = None
+    aggregate_fields = {'金额': 'sum', '已支付': 'sum', '未支付': 'sum', '结算单': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+    relfield_style = 'fk-select'
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('结算单', '材料__名称', '材料__规格')
+    list_filter = ('结算单', '材料', '数量', '金额', '已支付', '未支付', '日期', '制单人')
+    exclude = ('已支付', '未支付', '制单人',)
+    model_icon = 'fa fa-minus-square'
+
+    relurl = {'材料': '/bases/material_closebill/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        stock = MaterialStock.objects.filter(材料=self.new_obj.材料).first()
+        if stock is None:
+            raise Exception('库存中没有此材料')
+        super(MaterialCloseBillAdmin, self).save_models()
+
+    # 捕捉保存的异常
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super(MaterialCloseBillAdmin, self).post(request, *args, **kwargs)
+        except Exception as err:
+            self.message_user('库存中没有此材料', 'error')
+            return HttpResponseRedirect(request.path)
+        return response
+
+    def get_media(self):
+        return super(MaterialCloseBillAdmin, self).get_media() + Media(js=[self.static('/js/materialin.js')])
+
+
+# 材料支付
+class MaterialPayAdmin(object):
+    '''
+    材料支付
+    '''
+    list_display = ('结算单', '支付金额', '日期', '制单人')
+    # list_display_links = ('结算单')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    list_select_related = None
+    aggregate_fields = {'支付金额': 'sum', '结算单': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('结算单__结算单', '结算单__材料__名称', '结算单__材料__规格')
+    list_filter = ('结算单', '结算单__材料', '支付金额', '日期', '制单人')
+    exclude = ('制单人',)
+    model_icon = 'fa fa-minus-square'
+
+    relurl = {'结算单': '/bases/material_pay/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(MaterialPayAdmin, self).save_models()
+
+
 xadmin.site.register(Contract, ContractAdmin)
 xadmin.site.register(ContractPay, ContractPayAdmin)
 xadmin.site.register(SubContract, SubContractAdmin)
@@ -550,7 +633,11 @@ xadmin.site.register(MaterialStock, MaterialStockAdmin)
 xadmin.site.register(MaterialCost, MaterialCostAdmin)
 xadmin.site.register(MaterialInRecord, MaterialInRecordAdmin)
 xadmin.site.register(MaterialOutRecord, MaterialOutRecordAdmin)
+xadmin.site.register(MaterialCloseBill, MaterialCloseBillAdmin)
+xadmin.site.register(MaterialPay, MaterialPayAdmin)
 
 from .views import *
 
-xadmin.site.register_view(r'^bases/material_stock/$', material_stock, name='material_stock')
+xadmin.site.register_view(r'^bases/material_outrecord/$', material_outrecord, name='material_outrecord')
+xadmin.site.register_view(r'^bases/material_closebill/$', material_closebill, name='material_closebill')
+xadmin.site.register_view(r'^bases/material_pay/$', material_pay, name='material_pay')
