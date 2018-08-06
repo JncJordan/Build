@@ -516,12 +516,13 @@ class MaterialOutRecordAdmin(object):
         addoutstock(self.new_obj.材料, self.new_obj.数量, self.new_obj.金额)
 
     # 捕捉保存的异常, 会报错 has_header
-    # def post(self, request, *args, **kwargs):
-    #     try:
-    #         super(MaterialOutRecordAdmin, self).post(request, *args, **kwargs)
-    #     except Exception as err:
-    #         self.message_user('库存中没有此材料', 'error')
-    #         return HttpResponseRedirect(request.path)
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super(MaterialOutRecordAdmin, self).post(request, *args, **kwargs)
+        except Exception as err:
+            self.message_user('库存中没有此材料', 'error')
+            return HttpResponseRedirect(request.path)
+        return response
 
     def delete_models(self, queryset):
         # 首先保存所有要删除的记录
