@@ -1,5 +1,5 @@
 import datetime
-
+from decimal import Decimal
 from django.contrib.auth.models import User
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
@@ -367,44 +367,103 @@ def update_materialclosebill(sender, instance, **kwargs):
     materialclosebill.save()
 
 
-# 租赁管理-租入
+# 租赁管理-库存
 class LeaseStock(models.Model):
-    单据类型 = models.SmallIntegerField(choices=((0, '租入'), (1, '归还')), default=0)
-    发生日期 = models.DateField()
-    材料设备 = models.ForeignKey('bases.Material', on_delete=models.PROTECT, blank=True, null=True)
+    '''
+    租赁库存
+    '''
+    材料设备 = models.ForeignKey(Material, on_delete=models.PROTECT)
+    租赁日期 = models.DateField()
+    租赁数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    归还数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    剩余数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    归还金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    结算金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    欠款金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+
+    def money(self):
+        days = Decimal((datetime.date.today() - self.租赁日期).days)
+        return round(days * self.单价, 2) + self.归还金额
+
+    金额 = property(money)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '租赁管理'
+
+    def __str__(self):
+        return str(self.材料设备)
+
+
+# 租赁费用
+class LeaseCost(LeaseStock):
+    class Meta:
+        verbose_name_plural = verbose_name = '租赁费用'
+        proxy = True
+
+
+# 租赁管理-租入
+class LeaseIn(models.Model):
+    租赁日期 = models.DateField()
+    材料设备 = models.ForeignKey(Material, on_delete=models.PROTECT)
     单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
     数量 = models.DecimalField('单价', max_digits=13, decimal_places=3, default=0)
-    # 金额
-    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, blank=True, null=True)
-    支付金额 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
 
+    def update_leasestock(self, leasein, direction=1):
+        leasestock = LeaseStock.objects.get(材料设备=leasein.材料设备, 租赁日期=leasein.租赁日期, 单价=leasein.单价)
+        if leasestock is None:
+            leasestock = LeaseStock(材料设备=leasein.材料设备, 租赁日期=leasein.租赁日期, 单价=leasein.单价)
+        leasestock.租赁数量 += direction * leasein.数量
+        leasestock.剩余数量 = leasestock.租赁数量 - leasestock.归还数量
+        leasestock.save()
 
-    # 归还数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
-    # 剩余数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
-    # 上次结算日期 = models.DateField(blank=True, null=True)
-    # 结算完成 = models.BooleanField(default=False)
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            oldobj = LeaseIn.objects.get(pk=self.pk)
+            if oldobj is not None:
+                self.update_leasestock(oldobj, -1)
+        super().save(*args, **kwargs)
+        self.update_leasestock(self)
 
     class Meta:
         verbose_name_plural = verbose_name = '租赁租入'
 
     def __str__(self):
-        return self.material
+        return str(self.id) + ' ' + str(self.材料设备)
+
+
+# 已删除"租赁租入"触发器
+@receiver(post_delete, sender=LeaseIn)
+def update_Leasein(sender, instance, **kwargs):
+    leasestock = LeaseStock.objects.get(材料设备=instance.材料设备, 租赁日期=instance.租赁日期, 单价=instance.单价)
+    if leasestock is None:
+        # leasestock = LeaseStock(材料设备=instance.材料设备, 租赁日期=instance.租赁日期, 单价=instance.单价)
+        return
+    leasestock.租赁数量 -= instance.数量
+    leasestock.剩余数量 = instance.租赁数量 - instance.归还数量
+    leasestock.save()
 
 
 # 租赁管理-归还
-class LeaseOutRecord(LeaseStock):
+class LeaseOut(models.Model):
+    租赁单 = models.ForeignKey(LeaseIn, on_delete=models.PROTECT)
+    归还日期 = models.DateField()
+    数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
+
     class Meta:
         verbose_name_plural = verbose_name = '租赁归还'
         proxy = True
 
     def __str__(self):
-        return self.id + str(self.材料设备)
+        return str(self.id) + str(self.材料设备)
 
-
-# 租赁结算
-class LeaseCloseBill(object):
-    批次 = models.IntegerField()
-    发生日期 = models.DateField()
+# # 租赁结算
+# class LeaseCloseBill(object):
+#     批次 = models.IntegerField()
+#     发生日期 = models.DateField()
 
 # # 人工费用
 # class LaborCost(models.Model):
@@ -436,6 +495,3 @@ class LeaseCloseBill(object):
 #
 #     def __str__(self):
 #         return self.laborcost
-
-# 租赁费用
-# class LeaseCost(models.Model):

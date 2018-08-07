@@ -323,7 +323,8 @@ class MaterialCostAdmin(object):
     # list_display_links_details = False
     list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价')
     list_select_related = None
-    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算数量': 'sum', '结算金额': 'sum', '未结算数量': 'sum', '未结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum',
+    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算数量': 'sum', '结算金额': 'sum', '未结算数量': 'sum', '未结算金额': 'sum', '支付金额': 'sum',
+                        '欠款金额': 'sum',
                         '材料': 'count'}
 
     list_per_page = 50
@@ -624,6 +625,95 @@ class MaterialPayAdmin(object):
         super(MaterialPayAdmin, self).save_models()
 
 
+# 租赁管理
+class LeaseStockAdmin(object):
+    '''
+    租赁管理
+    '''
+    list_display = ('材料设备', '单价', '租赁日期', '租赁数量', '归还数量', '剩余数量')
+    # list_display_links = ()
+    # list_display_links_details = False
+    list_exclude = ('归还金额', '结算金额', '支付金额', '欠款金额')
+    list_select_related = None
+    aggregate_fields = {'租赁数量': 'sum', '归还数量': 'sum', '剩余数量': 'sum', '材料设备': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    # ordering = None
+
+    # 去除增删改功能
+    remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('材料设备__名称', '材料设备__规格')
+    list_filter = ('材料设备', '租赁日期', '租赁数量', '归还数量', '剩余数量')
+    # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    model_icon = 'fa fa-database'
+
+
+# 租赁费用
+class LeaseCostAdmin(object):
+    '''
+    租赁费用
+    '''
+    list_display = ('材料设备', '租赁数量', '归还数量', '剩余数量', '金额', '结算金额', '支付金额', '欠款金额')
+    # list_display_links = ()
+    # list_display_links_details = False
+    list_exclude = ('单价', '租赁日期','归还金额')
+    list_select_related = None
+    aggregate_fields = {'租赁数量': 'sum', '归还数量': 'sum', '剩余数量': 'sum', '归还应结金额': 'sum', '结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum',
+                        '材料': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    # ordering = None
+
+    # 去除增删改功能
+    remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('材料设备__名称', '材料设备__规格')
+    list_filter = ('材料设备', '材料设备__名称', '租赁数量', '归还数量', '剩余数量', '归还应结金额', '结算金额', '支付金额', '欠款金额')
+    # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    model_icon = 'fa fa-table'
+
+
+# 租赁租入
+class LeasseInAdmin(object):
+    '''
+    租赁租入
+    '''
+    list_display = ('id', '材料设备', '租赁日期', '单价', '数量', '制单人')
+    list_display_links = ('id', '材料设备')
+    # list_display_links_details = False
+    # list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_select_related = None
+    aggregate_fields = {'数量': 'sum', '材料设备': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('id', '材料设备__名称', '材料设备__规格')
+    list_filter = ('id', '材料设备', '单价', '数量', '日期', '制单人')
+    # exclude = ('制单人',)
+    model_icon = 'fa fa-plus-square'
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(MaterialInRecordAdmin, self).save_models()
+
+    def get_media(self):
+        return super(MaterialInRecordAdmin, self).get_media() + Media(js=[self.static('/js/materialin.js')])
+
+
 xadmin.site.register(Contract, ContractAdmin)
 xadmin.site.register(ContractPay, ContractPayAdmin)
 xadmin.site.register(SubContract, SubContractAdmin)
@@ -635,6 +725,8 @@ xadmin.site.register(MaterialInRecord, MaterialInRecordAdmin)
 xadmin.site.register(MaterialOutRecord, MaterialOutRecordAdmin)
 xadmin.site.register(MaterialCloseBill, MaterialCloseBillAdmin)
 xadmin.site.register(MaterialPay, MaterialPayAdmin)
+xadmin.site.register(LeaseStock, LeaseStockAdmin)
+xadmin.site.register(LeaseCost, LeaseCostAdmin)
 
 from .views import *
 
