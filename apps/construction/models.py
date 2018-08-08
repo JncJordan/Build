@@ -454,6 +454,9 @@ class LeaseOut(models.Model):
     归还日期 = models.DateField()
     数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
+    租赁日期 = models.DateField(editable=False, default=datetime.date.today())
+    单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0, editable=False)
+    金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0, editable=False)
 
     def update_leasestock(self, leaseout, direction=1):
         leasestock = LeaseStock.objects.filter(材料设备=leaseout.租赁单.材料设备, 租赁日期=leaseout.租赁单.租赁日期, 单价=leaseout.租赁单.单价).first()
@@ -471,6 +474,9 @@ class LeaseOut(models.Model):
             oldobj = LeaseOut.objects.get(pk=self.pk)
             if oldobj is not None:
                 self.update_leasestock(oldobj, -1)
+        self.租赁日期 = self.租赁单.租赁日期
+        self.单价 = self.租赁单.单价
+        self.金额 = (self.归还日期 - self.租赁日期).days * self.单价
         super().save(*args, **kwargs)
         self.update_leasestock(self)
 
@@ -493,6 +499,25 @@ def update_Leasein(sender, instance, **kwargs):
     days = (instance.归还日期 - instance.租赁单.租赁日期).days
     leasestock.归还金额 = days * instance.租赁单.单价 * leasestock.归还数量
     leasestock.save()
+
+
+# 租赁结算
+class LeaseCloseBill(models.Model):
+    结算单号 = models.CharField(max_length=64)
+    租赁单 = models.ForeignKey(LeaseStock, on_delete=models.PROTECT)
+    结算金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    累计结算金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    支付金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    欠款金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    备注 = models.CharField(max_length=256, blank=True, null=True)
+    日期 = models.DateField()
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '租赁结算'
+
+    def __str__(self):
+        return self.结算单号 + ' ' + str(self.租赁单.材料设备)
 
 # # 人工费用
 # class LaborCost(models.Model):

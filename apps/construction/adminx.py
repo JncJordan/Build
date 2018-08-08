@@ -693,6 +693,7 @@ class LeaseInAdmin(object):
     # list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
     list_select_related = None
     aggregate_fields = {'数量': 'sum', '材料设备': 'count'}
+    # fields = ('材料设备', '租赁日期', '单价', '数量')
 
     list_per_page = 50
     list_max_show_all = 200
@@ -718,12 +719,28 @@ class LeaseOutAdmin(object):
     '''
     租赁归还
     '''
-    list_display = ('租赁单', '归还日期', '数量', '制单人')
-    list_display_links = ('id', '材料设备')
+
+    list_display = ('租赁单', '租赁日期', '单价', '归还日期', '数量', '金额', '制单人')
+    #
+    # def 租赁日期(self, obj):
+    #     return '%s' % obj.租赁单.租赁日期
+    #
+    # def 单价(self, obj):
+    #     return '%s' % obj.租赁单.单价
+    #
+    # def 金额(self, obj):
+    #     days = (obj.归还日期 - obj.租赁单.租赁日期).days
+    #     return '%s' % round(days * obj.租赁单.单价 * obj.数量, 2)
+
+    # leasedate.short_description = '租赁日期'
+    # 单价.short_description = '单价'
+
+    # list_display_links = ('租赁单')
     # list_display_links_details = False
     # list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
     list_select_related = None
-    aggregate_fields = {'数量': 'sum', '租赁单': 'count'}
+
+    aggregate_fields = {'数量': 'sum', '金额': 'sum', '租赁单': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -735,7 +752,7 @@ class LeaseOutAdmin(object):
 
     # show_bookmarks = False
     search_fields = ('租赁单__id', '租赁单__材料设备__名称', '租赁单__材料设备__规格')
-    list_filter = ('租赁单', '租赁单__材料设备', '数量', '归还日期', '制单人')
+    list_filter = ('租赁单', '租赁单__材料设备', '租赁单__租赁日期', '数量', '归还日期', '制单人')
     # exclude = ('制单人',)
     model_icon = 'fa fa-cart-arrow-down'
 
