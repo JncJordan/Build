@@ -721,20 +721,6 @@ class LeaseOutAdmin(object):
     '''
 
     list_display = ('租赁单', '租赁日期', '单价', '归还日期', '数量', '金额', '制单人')
-    #
-    # def 租赁日期(self, obj):
-    #     return '%s' % obj.租赁单.租赁日期
-    #
-    # def 单价(self, obj):
-    #     return '%s' % obj.租赁单.单价
-    #
-    # def 金额(self, obj):
-    #     days = (obj.归还日期 - obj.租赁单.租赁日期).days
-    #     return '%s' % round(days * obj.租赁单.单价 * obj.数量, 2)
-
-    # leasedate.short_description = '租赁日期'
-    # 单价.short_description = '单价'
-
     # list_display_links = ('租赁单')
     # list_display_links_details = False
     # list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
@@ -762,6 +748,73 @@ class LeaseOutAdmin(object):
         self.new_obj.制单人 = self.request.user
         super(LeaseOutAdmin, self).save_models()
         # 是否需要检验租赁日期和归还日期,以及归还数量和剩余数量
+
+
+# 租赁结算
+class LeaseCloseBillAdmin(object):
+    '''
+    租赁结算
+    '''
+    list_display = ('结算单号', '租赁单', '结算金额', '支付金额', '欠款金额', '日期', '制单人', '备注')
+    list_display_links = ('结算单号', '租赁单')
+    # list_display_links_details = False
+    # list_exclude = ('支付金额', '欠款金额')
+    list_select_related = None
+    aggregate_fields = {'结算金额': 'sum', '结算单号': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+    relfield_style = 'fk-select'
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('结算单号', '租赁单__材料__名称', '租赁单__材料__规格', '备注')
+    list_filter = ('结算单号', '租赁单', '租赁单__材料', '日期', '制单人', '备注')
+    exclude = ('支付金额', '欠款金额', '制单人',)
+    model_icon = 'fa fa-exchange'
+
+    relurl = {'租赁单': '/rel/leasestock_closebill/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(LeaseCloseBillAdmin, self).save_models()
+
+
+# 租赁支付
+class LeasePayAdmin(object):
+    '''
+    租赁支付
+    '''
+    list_display = ('结算单', '支付金额', '日期', '制单人')
+    # list_display_links = ('结算单')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    list_select_related = None
+    aggregate_fields = {'支付金额': 'sum', '结算单': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('结算单__结算单', '结算单__材料__名称', '结算单__材料__规格')
+    list_filter = ('结算单', '结算单__材料', '支付金额', '日期', '制单人')
+    exclude = ('制单人',)
+    model_icon = 'fa fa-money'
+
+    relurl = {'结算单': '/rel/material_pay/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(MaterialPayAdmin, self).save_models()
 
 
 xadmin.site.register(Contract, ContractAdmin)
