@@ -568,7 +568,7 @@ class MaterialCloseBillAdmin(object):
     search_fields = ('结算单', '材料__名称', '材料__规格')
     list_filter = ('结算单', '材料', '数量', '金额', '已支付', '未支付', '日期', '制单人')
     exclude = ('已支付', '未支付', '制单人',)
-    model_icon = 'fa fa-minus-square'
+    model_icon = 'fa fa-exchange'
 
     relurl = {'材料': '/rel/material_closebill/'}
 
@@ -616,7 +616,7 @@ class MaterialPayAdmin(object):
     search_fields = ('结算单__结算单', '结算单__材料__名称', '结算单__材料__规格')
     list_filter = ('结算单', '结算单__材料', '支付金额', '日期', '制单人')
     exclude = ('制单人',)
-    model_icon = 'fa fa-minus-square'
+    model_icon = 'fa fa-money'
 
     relurl = {'结算单': '/rel/material_pay/'}
 
@@ -649,7 +649,9 @@ class LeaseStockAdmin(object):
     search_fields = ('材料设备__名称', '材料设备__规格')
     list_filter = ('材料设备', '租赁日期', '租赁数量', '归还数量', '剩余数量')
     # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
-    model_icon = 'fa fa-database'
+    model_icon = 'fa fa-shopping-cart'
+
+    relfield_style = 'fk-select'
 
 
 # 租赁费用
@@ -657,13 +659,13 @@ class LeaseCostAdmin(object):
     '''
     租赁费用
     '''
-    list_display = ('材料设备', '租赁数量', '归还数量', '剩余数量', '金额', '结算金额', '支付金额', '欠款金额')
+    list_display = ('材料设备', '单价', '租赁日期', '租赁数量', '归还数量', '剩余数量', '归还金额', '金额', '结算金额', '支付金额', '欠款金额')
     # list_display_links = ()
     # list_display_links_details = False
-    list_exclude = ('单价', '租赁日期','归还金额')
+    # list_exclude = ('租赁日期', '归还金额')
     list_select_related = None
-    aggregate_fields = {'租赁数量': 'sum', '归还数量': 'sum', '剩余数量': 'sum', '归还应结金额': 'sum', '结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum',
-                        '材料': 'count'}
+    aggregate_fields = {'租赁数量': 'sum', '归还数量': 'sum', '剩余数量': 'sum', '归还金额': 'sum', '结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum',
+                        '材料设备': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -675,13 +677,13 @@ class LeaseCostAdmin(object):
 
     # show_bookmarks = False
     search_fields = ('材料设备__名称', '材料设备__规格')
-    list_filter = ('材料设备', '材料设备__名称', '租赁数量', '归还数量', '剩余数量', '归还应结金额', '结算金额', '支付金额', '欠款金额')
+    list_filter = ('材料设备', '材料设备__名称', '租赁数量', '归还数量', '剩余数量', '归还金额', '结算金额', '支付金额', '欠款金额')
     # exclude = ('入库金额', '出库金额', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
-    model_icon = 'fa fa-table'
+    model_icon = 'fa fa-tv'
 
 
 # 租赁租入
-class LeasseInAdmin(object):
+class LeaseInAdmin(object):
     '''
     租赁租入
     '''
@@ -702,16 +704,47 @@ class LeasseInAdmin(object):
 
     # show_bookmarks = False
     search_fields = ('id', '材料设备__名称', '材料设备__规格')
-    list_filter = ('id', '材料设备', '单价', '数量', '日期', '制单人')
+    list_filter = ('id', '材料设备', '单价', '数量', '租赁日期', '制单人')
     # exclude = ('制单人',)
-    model_icon = 'fa fa-plus-square'
+    model_icon = 'fa fa-cart-plus'
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
-        super(MaterialInRecordAdmin, self).save_models()
+        super(LeaseInAdmin, self).save_models()
 
-    def get_media(self):
-        return super(MaterialInRecordAdmin, self).get_media() + Media(js=[self.static('/js/materialin.js')])
+
+# 租赁归还
+class LeaseOutAdmin(object):
+    '''
+    租赁归还
+    '''
+    list_display = ('租赁单', '归还日期', '数量', '制单人')
+    list_display_links = ('id', '材料设备')
+    # list_display_links_details = False
+    # list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价', '结算金额', '支付金额', '欠款金额')
+    list_select_related = None
+    aggregate_fields = {'数量': 'sum', '租赁单': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('租赁单__id', '租赁单__材料设备__名称', '租赁单__材料设备__规格')
+    list_filter = ('租赁单', '租赁单__材料设备', '数量', '归还日期', '制单人')
+    # exclude = ('制单人',)
+    model_icon = 'fa fa-cart-arrow-down'
+
+    relurl = {'租赁单': '/rel/leasestock_out/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(LeaseOutAdmin, self).save_models()
+        # 是否需要检验租赁日期和归还日期,以及归还数量和剩余数量
 
 
 xadmin.site.register(Contract, ContractAdmin)
@@ -727,9 +760,12 @@ xadmin.site.register(MaterialCloseBill, MaterialCloseBillAdmin)
 xadmin.site.register(MaterialPay, MaterialPayAdmin)
 xadmin.site.register(LeaseStock, LeaseStockAdmin)
 xadmin.site.register(LeaseCost, LeaseCostAdmin)
+xadmin.site.register(LeaseIn, LeaseInAdmin)
+xadmin.site.register(LeaseOut, LeaseOutAdmin)
 
 from .views import *
 
 xadmin.site.register_view(r'^rel/material_outrecord/$', material_outrecord, name='material_outrecord')
 xadmin.site.register_view(r'^rel/material_closebill/$', material_closebill, name='material_closebill')
 xadmin.site.register_view(r'^rel/material_pay/$', material_pay, name='material_pay')
+xadmin.site.register_view(r'^rel/leasestock_out/$', leasestock_out, name='leasestock_out')

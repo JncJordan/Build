@@ -5,7 +5,7 @@ from django.utils.html import escape
 from xadmin.views import BaseAdminView
 
 from bases.models import Material
-from .models import MaterialStock, MaterialCloseBill
+from .models import MaterialStock, MaterialCloseBill, LeaseStock
 
 
 # Create your views here.
@@ -76,4 +76,27 @@ class material_pay(BaseAdminView):
 
         return self.render_response(
             {'headers': {'id': 'ID', '__str__': '结算单'}, 'objects': objects, 'total_count': result_count,
+             'has_more': has_more})
+
+
+# 租赁归还_rel_租赁材料(必须是剩余数量>0)
+class leasestock_out(BaseAdminView):
+    paginator_class = Paginator
+
+    def get(self, request, *args, **kwargs):
+        queryset = LeaseStock.objects.filter(剩余数量__gt=0)
+        querystr = request.GET.get('_q_')
+        if (querystr is not None and querystr != ''):
+            queryset = queryset.filter(Q(材料设备__名称__contains=querystr) | Q(材料设备__规格__contains=querystr))
+        paginator = self.paginator_class(queryset, 50, 0, True)
+        result_count = paginator.count
+        result_list = paginator.page(1).object_list
+        has_more = result_count > 50
+
+        objects = []
+        for obj in result_list:
+            objects.append({'id': obj.id, '__str__': escape(str(obj))})
+
+        return self.render_response(
+            {'headers': {'id': 'ID', '__str__': '材料设备'}, 'objects': objects, 'total_count': result_count,
              'has_more': has_more})
