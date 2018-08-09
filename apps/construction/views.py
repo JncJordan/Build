@@ -5,7 +5,7 @@ from django.utils.html import escape
 from xadmin.views import BaseAdminView
 
 from bases.models import Material
-from .models import MaterialStock, MaterialCloseBill, LeaseStock, LeaseCloseBill
+from .models import MaterialStock, MaterialCloseBill, LeaseStock, LeaseCloseBill, LaborCloseBill
 
 
 # Create your views here.
@@ -146,4 +146,27 @@ class leaseclosebill_pay(BaseAdminView):
 
         return self.render_response(
             {'headers': {'id': 'ID', '__str__': '材料设备'}, 'objects': objects, 'total_count': result_count,
+             'has_more': has_more})
+
+
+# 人工费支付_rel_人工费结算(必须是未支付完的结算单)
+class laborclosebill_pay(BaseAdminView):
+    paginator_class = Paginator
+
+    def get(self, request, *args, **kwargs):
+        queryset = LaborCloseBill.objects.filter(欠款金额__gt=0)
+        querystr = request.GET.get('_q_')
+        if (querystr is not None and querystr != ''):
+            queryset = queryset.filter(Q(项目__项目__contains=querystr) | Q(结算单号__contains=querystr))
+        paginator = self.paginator_class(queryset, 50, 0, True)
+        result_count = paginator.count
+        result_list = paginator.page(1).object_list
+        has_more = result_count > 50
+
+        objects = []
+        for obj in result_list:
+            objects.append({'id': obj.id, '__str__': escape(str(obj))})
+
+        return self.render_response(
+            {'headers': {'id': 'ID', '__str__': '结算单号'}, 'objects': objects, 'total_count': result_count,
              'has_more': has_more})

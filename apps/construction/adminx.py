@@ -837,7 +837,7 @@ class LaborCostAdmin(object):
     list_per_page = 50
     list_max_show_all = 200
     # paginator_class = Paginator
-    ordering = ('-id',)
+    # ordering = ('-id',)
 
     # 去除增删改功能
     # remove_permissions = ['add', 'change', 'delete']
@@ -871,6 +871,7 @@ class LaborCloseBillAdmin(object):
     list_max_show_all = 200
     # paginator_class = Paginator
     ordering = ('-id',)
+    relfield_style = 'fk-select'
 
     # 去除增删改功能
     # remove_permissions = ['add', 'change', 'delete']
@@ -881,12 +882,56 @@ class LaborCloseBillAdmin(object):
     exclude = ('制单人', '支付金额', '欠款金额')
 
     # model_icon = 'fa fa-money'
-
     # relurl = {'结算单': '/rel/leaseclosebill_pay/'}
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
-        super(LaborCostAdmin, self).save_models()
+        super(LaborCloseBillAdmin, self).save_models()
+
+
+# 人工费支付
+class LaborPayAdmin(object):
+    '''
+    人工费支付
+    '''
+    list_display = ('结算单号', '项目', '支付时间', '支付金额', '制单人')
+    # list_display_links = ('结算单')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    search_fields = ('结算单号__结算单号', '项目__项目', '制单人')
+    list_filter = ('结算单号', '项目', '支付金额', '支付时间', '制单人')
+    exclude = ('制单人', '项目')
+    list_select_related = None
+    aggregate_fields = {'支付金额': 'sum', '项目': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    # model_icon = 'fa fa-money'
+    relurl = {'结算单号': '/rel/laborclosebill_pay/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        laborclosebill = LaborCloseBill.objects.filter(pk=self.new_obj.结算单号.pk).first()
+        if laborclosebill is None:
+            raise Exception('没有对应的结算单')
+        self.new_obj.项目 = laborclosebill.项目
+        super(LaborPayAdmin, self).save_models()
+
+    # 捕捉保存的异常
+    def post(self, request, *args, **kwargs):
+        try:
+            response = super(LaborPayAdmin, self).post(request, *args, **kwargs)
+        except Exception as err:
+            self.message_user('没有对应的结算单', 'error')
+            return HttpResponseRedirect(request.path)
+        return response
 
 
 xadmin.site.register(Contract, ContractAdmin)
@@ -906,6 +951,9 @@ xadmin.site.register(LeaseIn, LeaseInAdmin)
 xadmin.site.register(LeaseOut, LeaseOutAdmin)
 xadmin.site.register(LeaseCloseBill, LeaseCloseBillAdmin)
 xadmin.site.register(LeasePay, LeasePayAdmin)
+xadmin.site.register(LaborCost, LaborCostAdmin)
+xadmin.site.register(LaborCloseBill, LaborCloseBillAdmin)
+xadmin.site.register(LaborPay, LaborPayAdmin)
 
 from .views import *
 
@@ -916,3 +964,4 @@ xadmin.site.register_view(r'^rel/material_pay/$', material_pay, name='material_p
 xadmin.site.register_view(r'^rel/leasestock_out/$', leasestock_out, name='leasestock_out')
 xadmin.site.register_view(r'^rel/leasestock_closebill/$', leasestock_closebill, name='leasestock_closebill')
 xadmin.site.register_view(r'^rel/leaseclosebill_pay/$', leaseclosebill_pay, name='leaseclosebill_pay')
+xadmin.site.register_view(r'^rel/laborclosebill_pay/$', laborclosebill_pay, name='laborclosebill_pay')

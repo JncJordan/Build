@@ -55,6 +55,15 @@ class GlobalSetting(CommAdminView):
                     {'title': '支付', 'url': self.get_model_url(LeasePay, 'changelist'), 'perm': self.get_model_perm(LeasePay, 'view')},
                 )
             },
+            {
+                'title': '建筑人工',
+                'icon': 'fa fa-user-md',
+                'menus': (
+                    {'title': '总表', 'url': self.get_model_url(LaborCost, 'changelist'), 'perm': self.get_model_perm(LaborCost, 'view')},
+                    {'title': '结算', 'url': self.get_model_url(LaborCloseBill, 'changelist'), 'perm': self.get_model_perm(LaborCloseBill, 'view')},
+                    {'title': '支付', 'url': self.get_model_url(LaborPay, 'changelist'), 'perm': self.get_model_perm(LaborPay, 'view')},
+                )
+            },
         ]
 
 

@@ -624,7 +624,7 @@ class LaborCloseBill(models.Model):
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
 
     def update_laborcost(self, instance, direction=1):
-        obj = LeaseCost.objects.filter(pk=instance.项目.pk).first()
+        obj = LaborCost.objects.filter(pk=instance.项目.pk).first()
         if obj is None:
             return
         obj.累计结算金额 += direction * instance.结算金额
@@ -644,13 +644,13 @@ class LaborCloseBill(models.Model):
         verbose_name_plural = verbose_name = '人工费用结算'
 
     def __str__(self):
-        return self.结算单号
+        return self.结算单号 + ' ' + str(self.项目)
 
 
 # 已删除"人工费用结算"触发器
 @receiver(post_delete, sender=LaborCloseBill)
 def delete_laborclosebill(sender, instance, **kwargs):
-    obj = LeaseCost.objects.filter(pk=instance.项目.pk).first()
+    obj = LaborCost.objects.filter(pk=instance.项目.pk).first()
     if obj is None:
         return
     obj.累计结算金额 -= instance.结算金额
@@ -663,13 +663,13 @@ def delete_laborclosebill(sender, instance, **kwargs):
 class LaborPay(models.Model):
     '''人工费用支付'''
     结算单号 = models.ForeignKey(LaborCloseBill, on_delete=models.CASCADE)
-    项目 = models.ForeignKey(max_length=64, editable=False)
+    项目 = models.ForeignKey(LaborCost, on_delete=models.PROTECT, editable=False)
     支付时间 = models.DateField()
     支付金额 = models.DecimalField(max_digits=13, decimal_places=2)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
 
     def update_laborclosebill(self, instance, direction=1):
-        obj = LeaseCloseBill.objects.filter(pk=instance.结算单号.pk).first()
+        obj = LaborCloseBill.objects.filter(pk=instance.结算单号.pk).first()
         if obj is None:
             return
         obj.支付金额 += direction * instance.支付金额
@@ -688,13 +688,13 @@ class LaborPay(models.Model):
         verbose_name_plural = verbose_name = '人工费用支付'
 
     def __str__(self):
-        return self.id
+        return str(self.id)
 
 
 # 已删除"人工费用支付"触发器
 @receiver(post_delete, sender=LaborPay)
 def delete_laborpay(sender, instance, **kwargs):
-    obj = LeaseCloseBill.objects.filter(pk=instance.结算单号.pk).first()
+    obj = LaborCloseBill.objects.filter(pk=instance.结算单号.pk).first()
     if obj is None:
         return
     obj.支付金额 -= instance.支付金额
