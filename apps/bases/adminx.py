@@ -4,6 +4,7 @@ import xadmin
 from django.contrib import admin
 
 from .models import *
+from construction.models import *
 
 
 class GlobalSetting(CommAdminView):
@@ -11,16 +12,52 @@ class GlobalSetting(CommAdminView):
     site_footer = 'Copyright © 2018 JIT'
     menu_style = 'accordion'  # 菜单设置成折叠
 
+    def get_site_menu(self):
+        return [
+            {
+                'title': '建筑合同管理', 'perm': self.has_model_perm(Contract, 'changelist'),
+                'icon': 'fa fa-institution',
+                'menus': (
+                    {'title': '合同', 'url': self.get_model_url(Contract, 'changelist'), 'perm': self.get_model_perm(Contract, 'changelist')},
+                    {'title': '合同支付', 'url': self.get_model_url(ContractPay, 'changelist'), 'perm': self.get_model_perm(ContractPay, 'changelist')},
+                    {'title': '子合同', 'url': self.get_model_url(SubContract, 'changelist'), 'perm': self.get_model_perm(SubContract, 'changelist')},
+                    {'title': '子合同支付', 'url': self.get_model_url(SubContractPay, 'changelist'),
+                     'perm': self.get_model_perm(SubContractPay, 'changelist')},
+                )
+            },
+            {
+                'title': '建筑材料管理',  # 'perm': self.get_model_perm(Contract, 'view'),
+                'icon': 'fa fa-cubes',
+                'menus': (
+                    {'title': '图算量', 'url': self.get_model_url(Budget, 'changelist'), 'perm': self.get_model_perm(Budget, 'changelist')},
+                    {'title': '汇总表', 'url': self.get_model_url(MaterialStock, 'changelist'),
+                     'perm': self.get_model_perm(MaterialStock, 'changelist')},
+                    {'title': '费用表', 'url': self.get_model_url(MaterialCost, 'changelist'), 'perm': self.get_model_perm(MaterialCost, 'changelist')},
+                    {'title': '入库', 'url': self.get_model_url(MaterialInRecord, 'changelist'),
+                     'perm': self.get_model_perm(MaterialInRecord, 'changelist')},
+                    {'title': '出库', 'url': self.get_model_url(MaterialOutRecord, 'changelist'),
+                     'perm': self.get_model_perm(MaterialOutRecord, 'changelist')},
+                    {'title': '结算', 'url': self.get_model_url(MaterialCloseBill, 'changelist'),
+                     'perm': self.get_model_perm(MaterialCloseBill, 'changelist')},
+                    {'title': '支付', 'url': self.get_model_url(MaterialPay, 'changelist'), 'perm': self.get_model_perm(MaterialPay, 'changelist')},
+                )
+            },
+            {
+                'title': '建筑租赁管理',  # 'perm': self.get_model_perm(Contract, 'view'),
+                'icon': 'fa fa-shopping-cart',
+                'menus': (
+                    {'title': '租赁库存', 'url': self.get_model_url(LeaseStock, 'changelist'), 'perm': self.get_model_perm(LeaseStock, 'changelist')},
+                    {'title': '租赁费用', 'url': self.get_model_url(LeaseCost, 'changelist'), 'perm': self.get_model_perm(LeaseCost, 'changelist')},
+                    {'title': '租入', 'url': self.get_model_url(LeaseIn, 'changelist'), 'perm': self.get_model_perm(LeaseIn, 'changelist')},
+                    {'title': '归还', 'url': self.get_model_url(LeaseOut, 'changelist'), 'perm': self.get_model_perm(LeaseOut, 'changelist')},
+                    {'title': '结算', 'url': self.get_model_url(LeaseCloseBill, 'changelist'),
+                     'perm': self.get_model_perm(LeaseCloseBill, 'changelist')},
+                    {'title': '支付', 'url': self.get_model_url(LeasePay, 'changelist'), 'perm': self.get_model_perm(LeasePay, 'changelist')},
+                )
+            },
+        ]
 
-#     def get_site_menu(self):
-#         return [{
-#             'title': '我的统计',
-#             'icon': 'fa fa-users',
-#             'menus': (
-#                 {'title': '消费统计', 'url': '/mystatistics/busexpensedetails/index'},
-#                 {'title': '版本信息', 'url': '/mystatistics/version/index'},
-#             )
-#         }]
+
 #
 #
 # xadmin.site.register_view('mystatistics/busexpensedetails/index', BusExpenseDetailsAdminView, name='index')
@@ -91,4 +128,3 @@ xadmin.site.register(Unit, UnitAdmin)
 
 xadmin.site.register(SubProject, SubProjectAdmin)
 xadmin.site.register(Project, ProjectAdmin)
-

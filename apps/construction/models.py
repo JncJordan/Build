@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.utils import timezone
 
 from bases.models import *
 
@@ -360,7 +361,7 @@ class MaterialPay(models.Model):
 
 # 已删除"材料支付"触发器
 @receiver(post_delete, sender=MaterialPay)
-def update_materialclosebill(sender, instance, **kwargs):
+def update_materialpay(sender, instance, **kwargs):
     materialclosebill = MaterialCloseBill.objects.filter(pk=instance.结算单.pk).first()
     materialclosebill.已支付 += -1 * instance.支付金额
     materialclosebill.未支付 = materialclosebill.金额 - materialclosebill.已支付
@@ -438,7 +439,7 @@ class LeaseIn(models.Model):
 
 # 已删除"租赁租入"触发器
 @receiver(post_delete, sender=LeaseIn)
-def update_Leasein(sender, instance, **kwargs):
+def update_leasein(sender, instance, **kwargs):
     leasestock = LeaseStock.objects.filter(材料设备=instance.材料设备, 租赁日期=instance.租赁日期, 单价=instance.单价).first()
     if leasestock is None:
         # leasestock = LeaseStock(材料设备=instance.材料设备, 租赁日期=instance.租赁日期, 单价=instance.单价)
@@ -454,7 +455,7 @@ class LeaseOut(models.Model):
     归还日期 = models.DateField()
     数量 = models.DecimalField(max_digits=13, decimal_places=3, default=0)
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
-    租赁日期 = models.DateField(editable=False, default=datetime.date.today())
+    租赁日期 = models.DateField(editable=False, default=timezone.now)
     单价 = models.DecimalField(max_digits=13, decimal_places=2, default=0, editable=False)
     金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0, editable=False)
 
@@ -476,7 +477,7 @@ class LeaseOut(models.Model):
                 self.update_leasestock(oldobj, -1)
         self.租赁日期 = self.租赁单.租赁日期
         self.单价 = self.租赁单.单价
-        self.金额 = (self.归还日期 - self.租赁日期).days * self.单价
+        self.金额 = (self.归还日期 - self.租赁日期).days * self.单价 * self.数量
         super().save(*args, **kwargs)
         self.update_leasestock(self)
 
@@ -489,7 +490,7 @@ class LeaseOut(models.Model):
 
 # 已删除"租赁归还"触发器
 @receiver(post_delete, sender=LeaseOut)
-def update_Leasein(sender, instance, **kwargs):
+def update_leaseout(sender, instance, **kwargs):
     leasestock = LeaseStock.objects.filter(材料设备=instance.租赁单.材料设备, 租赁日期=instance.租赁单.租赁日期, 单价=instance.租赁单.单价).first()
     if leasestock is None:
         # leasestock = LeaseStock(材料设备=instance.材料设备, 租赁日期=instance.租赁日期, 单价=instance.单价)
@@ -513,7 +514,7 @@ class LeaseCloseBill(models.Model):
     制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
 
     def update_leasestock(self, instance, direction=1):
-        leasestock = LeaseStock.objects.filter(pk=instance.租赁单).first()
+        leasestock = LeaseStock.objects.filter(pk=instance.租赁单.pk).first()
         if leasestock is None:
             # leasestock = LeaseStock(材料设备=leaseout.租赁单.材料设备, 租赁日期=leaseout.租赁单.租赁日期, 单价=leaseout.租赁单.单价)
             return
@@ -535,13 +536,13 @@ class LeaseCloseBill(models.Model):
         verbose_name_plural = verbose_name = '租赁结算'
 
     def __str__(self):
-        return self.结算单号 + ' ' + str(self.租赁单.材料设备)
+        return '单号:' + self.结算单号 + ' 材料:' + str(self.租赁单)
 
 
 # 已删除"租赁结算"触发器
 @receiver(post_delete, sender=LeaseCloseBill)
-def update_Leasein(sender, instance, **kwargs):
-    leasestock = LeaseStock.objects.filter(pk=instance.租赁单).first()
+def update_leaseclosebill(sender, instance, **kwargs):
+    leasestock = LeaseStock.objects.filter(pk=instance.租赁单.pk).first()
     if leasestock is None:
         # leasestock = LeaseStock(材料设备=instance.材料设备, 租赁日期=instance.租赁日期, 单价=instance.单价)
         return
@@ -555,6 +556,43 @@ def update_Leasein(sender, instance, **kwargs):
 class LeasePay(models.Model):
     结算单 = models.ForeignKey(LeaseCloseBill, on_delete=models.PROTECT)
     金额 = models.DecimalField(max_digits=13, decimal_places=2, default=0)
+    日期 = models.DateField()
+    制单人 = models.ForeignKey(User, on_delete=models.PROTECT, editable=False)
+
+    def update_leaseclosebill(self, instance, direction=1):
+        leaseclosebill = LeaseCloseBill.objects.filter(pk=instance.结算单.pk).first()
+        if leaseclosebill is None:
+            # leasestock = LeaseStock(材料设备=leaseout.租赁单.材料设备, 租赁日期=leaseout.租赁单.租赁日期, 单价=leaseout.租赁单.单价)
+            return
+        leaseclosebill.支付金额 += direction * instance.金额
+        leaseclosebill.欠款金额 = leaseclosebill.结算金额 - leaseclosebill.支付金额
+        leaseclosebill.save()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            oldobj = LeasePay.objects.get(pk=self.pk)
+            if oldobj is not None:
+                self.update_leaseclosebill(oldobj, -1)
+        super().save(*args, **kwargs)
+        self.update_leaseclosebill(self)
+
+    class Meta:
+        verbose_name_plural = verbose_name = '租赁支付'
+
+    def __str__(self):
+        return str(self.id)
+
+
+# 已删除"租赁支付"触发器
+@receiver(post_delete, sender=LeasePay)
+def update_leasepay(sender, instance, **kwargs):
+    leaseclosebill = LeaseCloseBill.objects.filter(pk=instance.结算单.pk).first()
+    if leaseclosebill is None:
+        # leasestock = LeaseStock(材料设备=leaseout.租赁单.材料设备, 租赁日期=leaseout.租赁单.租赁日期, 单价=leaseout.租赁单.单价)
+        return
+    leaseclosebill.支付金额 -= instance.金额
+    leaseclosebill.欠款金额 = leaseclosebill.结算金额 - leaseclosebill.支付金额
+    leaseclosebill.save()
 
 # # 人工费用
 # class LaborCost(models.Model):

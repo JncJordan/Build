@@ -5,7 +5,7 @@ from django.utils.html import escape
 from xadmin.views import BaseAdminView
 
 from bases.models import Material
-from .models import MaterialStock, MaterialCloseBill, LeaseStock
+from .models import MaterialStock, MaterialCloseBill, LeaseStock, LeaseCloseBill
 
 
 # Create your views here.
@@ -88,6 +88,53 @@ class leasestock_out(BaseAdminView):
         querystr = request.GET.get('_q_')
         if (querystr is not None and querystr != ''):
             queryset = queryset.filter(Q(材料设备__名称__contains=querystr) | Q(材料设备__规格__contains=querystr))
+        paginator = self.paginator_class(queryset, 50, 0, True)
+        result_count = paginator.count
+        result_list = paginator.page(1).object_list
+        has_more = result_count > 50
+
+        objects = []
+        for obj in result_list:
+            objects.append({'id': obj.id, '__str__': escape(str(obj))})
+
+        return self.render_response(
+            {'headers': {'id': 'ID', '__str__': '材料设备'}, 'objects': objects, 'total_count': result_count,
+             'has_more': has_more})
+
+
+# 租赁结算_rel_租赁材料(必须是金额>结算金额)
+class leasestock_closebill(BaseAdminView):
+    def get(self, request, *args, **kwargs):
+
+        queryset = LeaseStock.objects.raw(
+            'select * from construction_leasestock a inner join bases_material b on b.id=a.材料设备_id where (curdate()-a.租赁日期)*a.单价*a.剩余数量+a.归还金额>a.结算金额')
+        querystr = request.GET.get('_q_')
+        if (querystr is not None and querystr != ''):
+            queryset = LeaseStock.objects.raw(
+                "select * from construction_leasestock a inner join bases_material b on b.id=a.材料设备_id where (curdate()-a.租赁日期)*a.单价*a.剩余数量+a.归还金额>a.结算金额 and (b.名称 like '%" + querystr + "%' or b.规格 like '%" + querystr + "%' ")
+        qs = list(queryset)
+        result_count = len(qs)
+        result_list = qs[:50]
+        has_more = result_count > 50
+
+        objects = []
+        for obj in result_list:
+            objects.append({'id': obj.id, '__str__': escape(str(obj))})
+
+        return self.render_response(
+            {'headers': {'id': 'ID', '__str__': '材料设备'}, 'objects': objects, 'total_count': result_count,
+             'has_more': has_more})
+
+
+# 租赁结算_rel_租赁材料(必须是金额>结算金额)
+class leaseclosebill_pay(BaseAdminView):
+    paginator_class = Paginator
+
+    def get(self, request, *args, **kwargs):
+        queryset = LeaseCloseBill.objects.filter(欠款金额__gt=0)
+        querystr = request.GET.get('_q_')
+        if (querystr is not None and querystr != ''):
+            queryset = queryset.filter(Q(租赁单__材料设备__名称__contains=querystr) | Q(租赁单__材料设备__规格__contains=querystr))
         paginator = self.paginator_class(queryset, 50, 0, True)
         result_count = paginator.count
         result_list = paginator.page(1).object_list

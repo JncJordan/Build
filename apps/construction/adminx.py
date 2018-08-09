@@ -760,7 +760,7 @@ class LeaseCloseBillAdmin(object):
     # list_display_links_details = False
     # list_exclude = ('支付金额', '欠款金额')
     list_select_related = None
-    aggregate_fields = {'结算金额': 'sum', '结算单号': 'count'}
+    aggregate_fields = {'结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum', '结算单号': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -772,8 +772,8 @@ class LeaseCloseBillAdmin(object):
     # remove_permissions = ['add', 'change', 'delete']
 
     # show_bookmarks = False
-    search_fields = ('结算单号', '租赁单__材料__名称', '租赁单__材料__规格', '备注')
-    list_filter = ('结算单号', '租赁单', '租赁单__材料', '日期', '制单人', '备注')
+    search_fields = ('结算单号', '租赁单__材料设备__名称', '租赁单__材料设备__规格', '备注')
+    list_filter = ('结算单号', '租赁单', '租赁单__材料设备', '日期', '制单人', '备注')
     exclude = ('支付金额', '欠款金额', '制单人',)
     model_icon = 'fa fa-exchange'
 
@@ -789,12 +789,18 @@ class LeasePayAdmin(object):
     '''
     租赁支付
     '''
-    list_display = ('结算单', '支付金额', '日期', '制单人')
+    list_display = ('结算单', '材料设备', '金额', '日期', '制单人')
+
+    def 材料设备(self, obj):
+        return '%s' % obj.结算单.租赁单.材料设备
+
+    材料设备.short_description = '材料设备'
+
     # list_display_links = ('结算单')
     # list_display_links_details = False
     # list_exclude = ('平均单价')
     list_select_related = None
-    aggregate_fields = {'支付金额': 'sum', '结算单': 'count'}
+    aggregate_fields = {'金额': 'sum', '结算单': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -805,16 +811,16 @@ class LeasePayAdmin(object):
     # remove_permissions = ['add', 'change', 'delete']
 
     # show_bookmarks = False
-    search_fields = ('结算单__结算单', '结算单__材料__名称', '结算单__材料__规格')
-    list_filter = ('结算单', '结算单__材料', '支付金额', '日期', '制单人')
+    search_fields = ('结算单__结算单号', '结算单__租赁单__材料设备__名称', '结算单__租赁单__材料设备__规格')
+    list_filter = ('结算单', '结算单__租赁单__材料设备', '金额', '日期', '制单人')
     exclude = ('制单人',)
     model_icon = 'fa fa-money'
 
-    relurl = {'结算单': '/rel/material_pay/'}
+    relurl = {'结算单': '/rel/leaseclosebill_pay/'}
 
     def save_models(self):
         self.new_obj.制单人 = self.request.user
-        super(MaterialPayAdmin, self).save_models()
+        super(LeasePayAdmin, self).save_models()
 
 
 xadmin.site.register(Contract, ContractAdmin)
@@ -832,6 +838,8 @@ xadmin.site.register(LeaseStock, LeaseStockAdmin)
 xadmin.site.register(LeaseCost, LeaseCostAdmin)
 xadmin.site.register(LeaseIn, LeaseInAdmin)
 xadmin.site.register(LeaseOut, LeaseOutAdmin)
+xadmin.site.register(LeaseCloseBill, LeaseCloseBillAdmin)
+xadmin.site.register(LeasePay, LeasePayAdmin)
 
 from .views import *
 
@@ -839,3 +847,5 @@ xadmin.site.register_view(r'^rel/material_outrecord/$', material_outrecord, name
 xadmin.site.register_view(r'^rel/material_closebill/$', material_closebill, name='material_closebill')
 xadmin.site.register_view(r'^rel/material_pay/$', material_pay, name='material_pay')
 xadmin.site.register_view(r'^rel/leasestock_out/$', leasestock_out, name='leasestock_out')
+xadmin.site.register_view(r'^rel/leasestock_closebill/$', leasestock_closebill, name='leasestock_closebill')
+xadmin.site.register_view(r'^rel/leaseclosebill_pay/$', leaseclosebill_pay, name='leaseclosebill_pay')
