@@ -719,7 +719,6 @@ class LeaseOutAdmin(object):
     '''
     租赁归还
     '''
-
     list_display = ('租赁单', '租赁日期', '单价', '归还日期', '数量', '金额', '制单人')
     # list_display_links = ('租赁单')
     # list_display_links_details = False
@@ -823,6 +822,73 @@ class LeasePayAdmin(object):
         super(LeasePayAdmin, self).save_models()
 
 
+# 人工费总表
+class LaborCostAdmin(object):
+    '''
+    人工费总表
+    '''
+    list_display = ('项目', '累计结算金额', '累计支付金额', '欠款金额')
+    # list_display_links = ('结算单')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    list_select_related = None
+    aggregate_fields = {'累计结算金额': 'sum', '累计支付金额': 'sum', '欠款金额': 'sum', '项目': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('项目')
+    list_filter = ('项目', '累计结算金额', '累计支付金额', '欠款金额')
+    exclude = ('制单人', '累计结算金额', '累计支付金额', '欠款金额')
+    # model_icon = 'fa fa-money'
+    # relurl = {'结算单': '/rel/leaseclosebill_pay/'}
+    relfield_style = 'fk-select'
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(LaborCostAdmin, self).save_models()
+
+
+# 人工费结算
+class LaborCloseBillAdmin(object):
+    '''
+    人工费结算
+    '''
+    list_display = ('结算单号', '项目', '结算时间', '结算金额', '支付金额', '欠款金额', '备注', '制单人')
+    # list_display_links = ('结算单')
+    # list_display_links_details = False
+    # list_exclude = ('平均单价')
+    list_select_related = None
+    aggregate_fields = {'结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum', '项目': 'count'}
+
+    list_per_page = 50
+    list_max_show_all = 200
+    # paginator_class = Paginator
+    ordering = ('-id',)
+
+    # 去除增删改功能
+    # remove_permissions = ['add', 'change', 'delete']
+
+    # show_bookmarks = False
+    search_fields = ('结算单号', '项目__项目', '备注')
+    list_filter = ('结算单号', '项目', '结算金额', '支付金额', '欠款金额', '结算时间', '备注', '制单人')
+    exclude = ('制单人', '支付金额', '欠款金额')
+
+    # model_icon = 'fa fa-money'
+
+    # relurl = {'结算单': '/rel/leaseclosebill_pay/'}
+
+    def save_models(self):
+        self.new_obj.制单人 = self.request.user
+        super(LaborCostAdmin, self).save_models()
+
+
 xadmin.site.register(Contract, ContractAdmin)
 xadmin.site.register(ContractPay, ContractPayAdmin)
 xadmin.site.register(SubContract, SubContractAdmin)
@@ -843,6 +909,7 @@ xadmin.site.register(LeasePay, LeasePayAdmin)
 
 from .views import *
 
+# 引用参考视图
 xadmin.site.register_view(r'^rel/material_outrecord/$', material_outrecord, name='material_outrecord')
 xadmin.site.register_view(r'^rel/material_closebill/$', material_closebill, name='material_closebill')
 xadmin.site.register_view(r'^rel/material_pay/$', material_pay, name='material_pay')

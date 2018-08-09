@@ -126,7 +126,7 @@ class leasestock_closebill(BaseAdminView):
              'has_more': has_more})
 
 
-# 租赁结算_rel_租赁材料(必须是金额>结算金额)
+# 租赁支付_rel_租赁结算(必须是未支付完的结算单)
 class leaseclosebill_pay(BaseAdminView):
     paginator_class = Paginator
 
