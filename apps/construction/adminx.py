@@ -13,12 +13,12 @@ class ContractAdmin(object):
     '''
     合同列表
     '''
-    list_display = ('合同名称', '合同内容', '合作联系人', '合作人电话', '合同单价', '已支付金额', '剩余金额', '完成状态', '制单人')
+    list_display = ('合同名称', '合同内容', '合作联系人', '合作人电话', '合同单价', '合同总价', '已支付金额', '剩余金额', '完成状态', '制单人')
     # list_display_links = ()
     # list_display_links_details = False
     # list_exclude=()
     list_select_related = None
-    aggregate_fields = {'合同单价': 'sum', '已支付金额': 'sum', '剩余金额': 'sum', '合同名称': 'count'}
+    aggregate_fields = {'合同单价': 'sum', '合同总价': 'sum', '已支付金额': 'sum', '剩余金额': 'sum', '合同名称': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -125,6 +125,9 @@ class SubContractAdmin(object):
     search_fields = ('主合同__合同名称', '合同名称', '合同内容', '合作联系人')
     list_filter = ('主合同', '合同名称', '合同内容', '合作联系人', '合作人电话', '完成状态', '已支付金额', '剩余金额')
     exclude = ('已支付金额', '剩余金额', '制单人')
+    list_editable = ['完成状态']
+    aggregate_fields = {'合同单价': 'sum', '合同总价': 'sum', '已支付金额': 'sum', '剩余金额': 'sum', '合同名称': 'count'}
+
     model_icon = 'fa fa-file-word-o'
     relfield_style = 'fk-select'
     list_per_page = 50
@@ -217,7 +220,8 @@ class BudgetAdmin(object):
     # list_display_links_details = False
     # list_exclude=()
     list_select_related = None
-    aggregate_fields = {'图算量': 'sum', '金额': 'sum', '入库总数量': 'sum', '入库总金额': 'sum', '剩余还需购买数量': 'sum', '剩余还需购买金额': 'sum', '材料': 'count'}
+    aggregate_fields = {'图算量': 'sum', '金额': 'sum', '入库总数量': 'sum', '入库总金额': 'sum', '剩余还需购买数量': 'sum', '剩余还需购买金额': 'sum',
+                        '材料': 'count'}
 
     list_per_page = 50
     list_max_show_all = 200
@@ -323,7 +327,8 @@ class MaterialCostAdmin(object):
     # list_display_links_details = False
     list_exclude = ('出库数量', '出库金额', '库存数量', '库存金额', '平均单价')
     list_select_related = None
-    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算数量': 'sum', '结算金额': 'sum', '未结算数量': 'sum', '未结算金额': 'sum', '支付金额': 'sum',
+    aggregate_fields = {'入库数量': 'sum', '入库金额': 'sum', '结算数量': 'sum', '结算金额': 'sum', '未结算数量': 'sum', '未结算金额': 'sum',
+                        '支付金额': 'sum',
                         '欠款金额': 'sum',
                         '材料': 'count'}
 
@@ -664,7 +669,8 @@ class LeaseCostAdmin(object):
     # list_display_links_details = False
     # list_exclude = ('租赁日期', '归还金额')
     list_select_related = None
-    aggregate_fields = {'租赁数量': 'sum', '归还数量': 'sum', '剩余数量': 'sum', '归还金额': 'sum', '结算金额': 'sum', '支付金额': 'sum', '欠款金额': 'sum',
+    aggregate_fields = {'租赁数量': 'sum', '归还数量': 'sum', '剩余数量': 'sum', '归还金额': 'sum', '结算金额': 'sum', '支付金额': 'sum',
+                        '欠款金额': 'sum',
                         '材料设备': 'count'}
 
     list_per_page = 50
